@@ -102,7 +102,7 @@
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from 'vue'
-import axios from 'axios'
+import { categoryApi } from '@/api/category'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -123,7 +123,6 @@ const categoryFormRef = ref<FormInstance>()
 const categoryForm = reactive({
   categoryId: '',
   categoryName: '',
-  parentId: 'root', // 顶级主题
   description: '',
   detailedDescription: '',
   displayOrder: 1,
@@ -149,7 +148,7 @@ const rules = reactive<FormRules>({
 const fetchTopCategories = async () => {
   loading.value = true
   try {
-    const response = await axios.get('/api/categories/top')
+    const response = await categoryApi.getTopCategories()
     categoryList.value = response.data
   } catch (error) {
     console.error('获取主题列表失败:', error)
@@ -163,7 +162,7 @@ const fetchTopCategories = async () => {
 const handleSearch = async () => {
   loading.value = true
   try {
-    const response = await axios.get(`/api/categories/search?keyword=${searchKeyword.value}`)
+    const response = await categoryApi.searchCategories(searchKeyword.value)
     categoryList.value = response.data
   } catch (error) {
     console.error('搜索主题失败:', error)
@@ -203,7 +202,7 @@ const handleDeleteCategory = (row: any) => {
     }
   ).then(async () => {
     try {
-      await axios.delete(`/api/categories/${row.categoryId}`)
+      await categoryApi.deleteCategory(row.categoryId)
       ElMessage.success('删除成功')
       fetchTopCategories()
     } catch (error) {
@@ -224,11 +223,11 @@ const submitCategoryForm = async () => {
       try {
         if (dialogType.value === 'add') {
           // 新增分类
-          await axios.post('/api/categories', categoryForm)
+          await categoryApi.addCategory(categoryForm)
           ElMessage.success('新增成功')
         } else {
           // 编辑分类
-          await axios.put(`/api/categories/${categoryForm.categoryId}`, categoryForm)
+          await categoryApi.updateCategory(categoryForm.categoryId, categoryForm)
           ElMessage.success('更新成功')
         }
         dialogVisible.value = false
@@ -248,7 +247,7 @@ const resetForm = () => {
   }
   categoryForm.categoryId = ''
   categoryForm.categoryName = ''
-  categoryForm.parentId = 'root'
+  categoryForm.parentId = null
   categoryForm.description = ''
   categoryForm.detailedDescription = ''
   categoryForm.displayOrder = 1

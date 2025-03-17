@@ -6,9 +6,9 @@
         <button>搜索</button>
       </div>
       <!-- 添加主题管理链接 -->
-      <div class="admin-link">
+   <!--   <div  class="admin-link">
         <router-link to="/admin/categories">主题管理</router-link>
-      </div>
+      </div> -->
     </div>
     
     <div class="content-wrapper">
@@ -90,7 +90,7 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import type { TableColumnsType } from 'ant-design-vue';
-import service from '../utils/axios';
+import { categoryApi } from '@/api/category';
 
 interface CategoryResponse {
     categoryId: string;
@@ -105,12 +105,7 @@ const categories = ref<CategoryResponse[]>([]);
 const fetchCategories = async () => {      
     try {
         console.log('Fetching categories...');
-        const response = await service.get('/api/categories/top', {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await categoryApi.getTopCategories();
         
         if (response.data) {
             console.log('Response data:', response.data);

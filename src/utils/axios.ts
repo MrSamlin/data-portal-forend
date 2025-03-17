@@ -7,7 +7,7 @@ const apiBaseUrl = process.env.VUE_APP_API_URL || '/'
 const service = axios.create({
   baseURL: '/',  // 使用相对路径，让代理处理
   timeout: 10000,
-  withCredentials: false
+  withCredentials: true  // 允许跨域请求携带凭证
 })
 
 // 不需要设置 baseURL，让请求走代理
@@ -21,6 +21,7 @@ service.interceptors.request.use(
     // 打印环境信息
     console.log('Current ENV:', process.env.NODE_ENV);
     console.log('API Base URL:', apiBaseUrl);
+    console.log('Request URL:', config.url);
     
     // 设置通用请求头
     if (config.headers) {
@@ -44,6 +45,10 @@ service.interceptors.request.use(
 // 添加响应拦截器
 service.interceptors.response.use(
   response => {
+    // 打印响应信息
+    console.log('Response from:', response.config.url);
+    console.log('Response status:', response.status);
+    
     // 直接返回数据部分
     return response
   },

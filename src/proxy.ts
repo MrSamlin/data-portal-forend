@@ -33,7 +33,6 @@ const createProxy = (env: string): ProxyConfig => {
       target,
       changeOrigin: true,
       ws: true,
-      secure: env === 'production', // 生产环境使用HTTPS
       pathRewrite: {
         '^/api': '/api' // 保持API路径不变
       }
