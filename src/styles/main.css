@@ -1,0 +1,501 @@
+.data-portal {
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  display: flex;
+  gap: 20px;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  margin-right: 20px;
+  padding: 0 0 0 160px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-menu {
+  width: 280px;
+  flex-shrink: 0;
+  background: #fff;
+  min-height: calc(100vh - 40px); /* 减去padding的高度 */
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  
+}
+
+/* 搜索区域样式 */
+.search-bar-container {
+  width: calc(100% + 160px);
+  height: 120px;
+  background: url('../assets/bg-header.png') no-repeat center center;
+  background-size: 100% 100%;
+  margin-bottom: 24px;
+  margin-left: -160px;
+  padding-left: 160px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* 背景装饰 */
+/* .search-bar-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 120px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffd700' opacity='0.1'%3E%3Cpath d='M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.1;
+} */
+
+.search-bar {
+  width: 50%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  transition: all 0.3s;
+  min-width: 0; /* 防止input超出容器 */
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #ff8c00;
+  box-shadow: 0 2px 8px rgba(255,140,0,0.1);
+}
+
+.search-bar button {
+  padding: 12px 24px;
+  background-color: #ff8c00;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+  white-space: nowrap;
+  min-width: 100px; /* 设置按钮最小宽度 */
+}
+
+.search-bar button:hover {
+  background-color: #ff7f00;
+  box-shadow: 0 2px 8px rgba(255,140,0,0.2);
+}
+
+/* 修改数据平台标题样式 */
+.platform-menu-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 16px;
+  padding-left: 8px;
+  border-left: 3px solid #ffa500;
+}
+
+.platform-menu-title::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background-color: #ffa500;
+  margin-right: 8px;
+  border-radius: 2px;
+}
+
+.category-row {
+  margin: 0;
+  padding: 20px 0;
+  display: flex;
+  justify-content: flex-start; /* 改为左对齐 */
+  width: 100%;
+  gap: 40px;
+  flex-wrap: nowrap; /* 防止换行 */
+  overflow-x: auto; /* 超出时可以滚动 */
+}
+
+.category-card {
+  flex: 0 0 240px; /* 改为固定宽度 */
+  height: 120px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  min-width: unset; /* 移除最小宽度限制 */
+  padding: 20px;
+}
+
+/* 背景虚化图标 */
+.category-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-repeat: no-repeat;
+  background-position: right -20px center;
+  background-size: 80px 80px;
+  opacity: 0.2;
+  z-index: 1;
+}
+
+/* 每个卡片的背景图标 */
+.category-card[data-category="car"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M18.92 5.01C18.72 4.42 18.16 4 17.5 4h-11c-.66 0-1.21.42-1.42 1.01L3 11v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 6h10.29l1.04 3H5.81l1.04-3zM19 16H5v-4.66l.12-.34h13.77l.11.34V16z'/%3E%3C/svg%3E");
+}
+
+.category-card[data-category="macro"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z'/%3E%3C/svg%3E");
+}
+
+.category-card[data-category="property"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z'/%3E%3C/svg%3E");
+}
+
+.category-card[data-category="logistics"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z'/%3E%3C/svg%3E");
+}
+
+.category-card[data-category="tech"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z'/%3E%3C/svg%3E");
+}
+
+/* 渐变遮罩 */
+.category-card::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 4px; /* 增加高度到4px */
+  background-color: rgba(255, 255, 255, 0.7); /* 增加不透明度到0.7 */
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+  box-shadow: 0 1px 4px rgba(255, 255, 255, 0.4); /* 增强阴影效果 */
+}
+
+/* 选中状态显示下划线 */
+.category-card.active::after {
+  transform: scaleX(1);
+  background-color: rgba(255, 255, 255, 0.9); /* 增加不透明度到0.9 */
+  height: 5px; /* 选中状态更粗 */
+}
+
+/* 悬停状态也显示下划线 */
+.category-card:hover::after {
+  transform: scaleX(1);
+  background-color: rgba(255, 255, 255, 0.9); /* 增加不透明度到0.9 */
+  height: 5px; /* 悬停状态也更粗 */
+}
+
+.category-icon {
+  display: none;
+}
+
+.category-label {
+  font-size: 20px;
+  font-weight: 500;
+  position: relative;
+  z-index: 3;
+  margin-top: 0;
+}
+
+/* 悬停效果 */
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.category-card:hover::before {
+  opacity: 0.3;
+  transform: scale(1.1);
+}
+
+.category-card.active {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+/* 删除不需要的旧样式 */
+.data-card,
+.data-card:hover,
+.data-card .ant-card-head-title,
+.data-card p,
+.data-card p:last-child,
+.category-content,
+.category-content h3,
+.category-content p {
+  display: none;
+}
+
+/* 内容区域样式调整 */
+.content-area {
+  margin-top: 20px;
+  margin-right: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 20px;
+  flex: 1;
+  min-height: calc(100vh - 300px); /* 设置最小高度，减去其他元素的高度 */
+}
+
+.content-section {
+  flex: 1 1 calc(50% - 10px);
+  min-width: 300px;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-title {
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  height: 48px;
+}
+
+/* 添加左侧黄色竖线 */
+.section-title::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background-color: #ffa500;
+  margin-right: 12px;
+  border-radius: 2px;
+}
+
+/* 调整表格容器样式 */
+.content-section .ant-table-wrapper {
+  margin: 0;
+  padding: 12px;
+  background: #fff;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-section .ant-table {
+  margin: 0;
+  flex: 1;
+}
+
+.content-section .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 12px 16px;
+}
+
+.content-section .ant-table-tbody > tr > td {
+  font-size: 14px;
+  padding: 12px 16px;
+}
+
+.content-section .ant-table-tbody > tr:last-child > td {
+  border-bottom: none;
+}
+
+/* 表格样式微调 */
+.ant-table-thead > tr > th {
+  background: #f8f9fa;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 12px 16px;
+}
+
+.ant-table-tbody > tr > td {
+  font-size: 14px;
+  padding: 12px 16px;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #f8f9fa;
+}
+
+/* 调整平台菜单容器样式 */
+.platform-menu {
+  padding: 16px;
+  position: sticky;
+  top: 20px;
+  height: 100%;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* 调整菜单列表的样式 */
+.platform-menu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.platform-menu-item {
+  padding: 8px 0;
+  display: flex;
+  align-items: flex-start;
+  font-size: 14px;
+}
+
+.menu-number {
+  margin-right: 8px;
+  color: #6A5ACD;
+  flex-shrink: 0;
+}
+
+.menu-link {
+  flex: 1;
+  color: #6A5ACD;
+  text-decoration: none;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+}
+
+.menu-link:hover {
+  color: #483D8B;
+}
+
+.menu-type {
+  color: #999;
+  margin-left: 4px;
+  font-size: 12px;
+}
+
+/* 添加鼠标指针样式 */
+.menu-link {
+  cursor: pointer;
+}
+
+/* 删除箭头相关样式 */
+.menu-link::after {
+  display: none;
+}
+
+.menu-link:hover::after {
+  display: none;
+}
+
+/* 添加滚动条样式 */
+.category-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.category-row::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.category-row::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.category-row::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
+/* 标题单元格样式 */
+.title-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* NEW 标签样式 */
+.new-tag {
+  background-color: #ff4d4f;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+/* 标题栏样式 */
+.title-bar {
+  background: #fff;
+  padding: 16px 20px;
+  margin: -20px -20px 20px -20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.title-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-left: 160px; /* 与主内容对齐 */
+}
+
+.title-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.title-text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 将绝对路径改为相对路径 */
+.header {
+  /* 假设图片在 assets 目录下 */
+  background-image: url('../assets/bg-header.png');
+  /* 或者如果图片在 public 目录下 */
+  /* background-image: url('../../public/bg-header.png'); */
+} 
