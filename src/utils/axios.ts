@@ -2,14 +2,7 @@
 import axios, { InternalAxiosRequestConfig } from 'axios'
 
 // 获取环境变量
-const apiBaseUrl = import.meta.env?.VITE_APP_API_BASE_URL || '/'
-
-// 声明 import.meta.env 类型
-declare global {
-  interface ImportMeta {
-    env: Record<string, string>
-  }
-}
+const apiBaseUrl = process.env.VUE_APP_API_URL || '/'
 
 const service = axios.create({
   baseURL: '/',  // 使用相对路径，让代理处理
@@ -26,7 +19,7 @@ const service = axios.create({
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 打印环境信息
-    console.log('Current ENV:', import.meta.env.MODE);
+    console.log('Current ENV:', process.env.NODE_ENV);
     console.log('API Base URL:', apiBaseUrl);
     
     // 设置通用请求头
