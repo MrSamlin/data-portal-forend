@@ -2,8 +2,16 @@
   <div class="data-portal">
     <div class="search-bar-container">
       <div class="search-bar">
-        <input type="text" placeholder="请输入" />
-        <button>搜索</button>
+        <el-input
+          v-model="searchKeyword"
+          placeholder="请输入搜索关键词"
+          class="search-input"
+          @keyup.enter="handleSearch"
+        >
+          <template #append>
+            <el-button type="primary" @click="handleSearch">搜索</el-button>
+          </template>
+        </el-input>
       </div>
     </div>
     
@@ -270,6 +278,27 @@ const sections = computed(() => {
 });
 
 const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
+
+const searchKeyword = ref('');
+
+const handleSearch = () => {
+  console.log('进来了');
+  const baseUrl = 'https://iadev.cmfchina.com/IA/polymerize/search.html';
+  const params = new URLSearchParams({
+    orderBy: 'true',
+    keyWordType: 'title',
+    rangeCount: '31',
+    q: searchKeyword.value,
+    query_field: '',
+    query_fie_name: '',
+    field_str: '',
+    field_show: '',
+    scene: 'all'
+  });
+
+  const encodedUrl = `${baseUrl}?${params.toString()}`;
+  window.open(encodedUrl, '_blank');
+};
 </script>
 
 <style scoped>
@@ -289,8 +318,17 @@ const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
   color: #333; /* 更改标题颜色为深灰色 */
 }
 
+.search-bar-container {
+  padding: 20px;
+}
+
 .search-bar {
-  background-color: #e0e0e0; /* 更改搜索栏颜色为灰色 */
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-input {
+  width: 100%;
 }
 
 .menu-link {

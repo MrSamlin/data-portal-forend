@@ -17,10 +17,30 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: '首页' }
   },
   {
-    path: '/admin/categories',
-    name: 'CategoryManagement',
-    component: () => import('@/views/admin/CategoryManagement.vue'),
-    meta: { title: '主题管理', requiresAuth: false }
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('@/views/admin/AdminLayout.vue'),
+    meta: { title: '后台管理', requiresAuth: false },
+    children: [
+      {
+        path: 'categories',
+        name: 'CategoryManagement',
+        component: () => import('@/views/admin/CategoryManagement.vue'),
+        meta: { title: '主题导航维护', requiresAuth: false }
+      },
+      {
+        path: 'analysis',
+        name: 'AnalysisConfig',
+        component: () => import('@/views/admin/AnalysisConfig.vue'),
+        meta: { title: '深度分析配置', requiresAuth: false }
+      },
+      {
+        path: 'indicators',
+        name: 'IndicatorConfig',
+        component: () => import('@/views/admin/IndicatorConfig.vue'),
+        meta: { title: '指标配置', requiresAuth: false }
+      }
+    ]
   }
 ]
 

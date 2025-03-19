@@ -2,13 +2,14 @@
   <div class="data-portal">
     <div class="search-bar-container">
       <div class="search-bar">
-        <input type="text" placeholder="请输入" />
-        <button>搜索</button>
+        <input 
+          type="text" 
+          v-model="searchKeyword" 
+          placeholder="请输入搜索关键词" 
+          @keyup.enter="handleSearch"
+        />
+        <button @click="handleSearch">搜索</button>
       </div>
-      <!-- 添加主题管理链接 -->
-   <!--   <div  class="admin-link">
-        <router-link to="/admin/categories">主题管理</router-link>
-      </div> -->
     </div>
     
     <div class="content-wrapper">
@@ -37,6 +38,7 @@
                 :columns="section.columns"
                 :data-source="section.data"
                 :pagination="false"
+                :loading="section.loading"
                 size="small"
               >
                 <template #headerCell="{ column }">
@@ -86,11 +88,13 @@
   </div>
 </template>
 
+
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import type { TableColumnsType } from 'ant-design-vue';
-import { categoryApi } from '@/api/category';
+import service from '@/utils/axios';
 
 interface CategoryResponse {
     categoryId: string;
@@ -98,14 +102,35 @@ interface CategoryResponse {
     icon: string;  
 }
 
+
+interface DashboardItem {
+    id: string;
+    cardTitle: string;
+    cardDate?: string;
+    auditStatus?: string;
+    authorList?: Array<{
+        authorName: string;
+    }>;
+    submitterName?: string;
+    gmtCreate?: string;
+    viewCount?: number;  
+}
+
 const activeTab = ref('car'); // 确保 activeTab 被声明
 const categories = ref<CategoryResponse[]>([]);
+const dashboardData = ref<DashboardItem[]>([]);
+const loadingDashboard = ref(false);
 
 // 获取分类数据
 const fetchCategories = async () => {      
     try {
         console.log('Fetching categories...');
-        const response = await categoryApi.getTopCategories();
+        const response = await service.get('/api/categories/top', {  // 保持 /api 前缀
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
         
         if (response.data) {
             console.log('Response data:', response.data);
@@ -127,9 +152,109 @@ const fetchCategories = async () => {
     }
 };
 
+
+// 获取指标看板数据
+const fetchDashboardData = async () => {
+    loadingDashboard.value = true;
+    try {
+        const response = await service.post('/api/edbapply/v2/card/listEdbCardPage',
+            {
+                createUser: 1,
+                pageNumber: 1,
+                pageSize: 5,
+                cardTitle: null,
+                author: null,
+                industryId: null,
+                startCardDate: null,
+                endCardDate: null
+            },
+            {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json, text/plain, */*',
+              'Accept-Language': 'zh-CN,zh;q=0.9',
+              'Authentication': '5cab2e44-7e64-41fa-aea4-d6ffe42f46a32', // 使用正确的Authentication值
+              'Cache-Control': 'no-cache',
+              'Origin': 'https://iadev.cmfchina.com  ',
+              'Token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoi5YiY5p2wIiwic291cmNlIjoiY21mX2NhbGVuZGFyIiwidXNlck5hbWUiOiJsaXVqaWUiLCJleHAiOjE3NDI0NTYwODEsInVzZXJJZCI6IjIxNzk2MTAifQ.YAehN4-PFoTegyDfP7OHjJ8KyVGknJiOTX5ohNZ8VTA'
+              // Cookie可能也很重要，但在前端代码中通常会自动发送
+              // 'Cookie': 'JSESSIONID=9851DE2660A9D37D27BB31D40920CDB3; sajssdk_2015_cross_new_user=1; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%22%E5%88%98%E6%9D%B02179610%22%2C%22first_id%22%3A%22195ad158455ac2-0f0490ae2da6cd8-26001a51-2073600-195ad158456dc1%22%2C%22props%22%3A%7B%7D%2C%22%24device_id%22%3A%22195ad158455ac2-0f0490ae2da6cd8-26001a51-2073600-195ad158456dc1%22%7D'
+            }
+          }
+        );
+        
+        console.log('Dashboard API response:', response.data);
+        
+        if (response.data && response.data.rows) {
+            dashboardData.value = response.data.rows.map((item: any) => ({
+                id: item.id,
+                cardTitle: item.cardTitle || '无标题',
+                cardDate: item.cardDate || item.gmtCreate || '未知日期',
+                authorName: item.authorList && item.authorList.length > 0 
+                    ? item.authorList[0].authorName 
+                    : item.submitterName || '未知作者',
+                auditStatus: item.auditStatus || '未知状态',
+                viewCount: Math.floor(Math.random() * 1000) // 模拟数据，实际应从API获取
+            }));
+        }
+    } catch (error) {
+        console.error('获取指标看板数据失败:', error);
+    } finally {
+        loadingDashboard.value = false;
+    }
+};
+
+
+
+// 根据主题获取  指标数据
+const fetchIndicatorByTheme = async () => {
+    loadingDashboard.value = true;
+    try {
+        const response = await service.post('/api/edbapply/v2/indicatorSearch/queryClickTreeList',
+            {
+                indicatorCode: 1,
+                indicatorKeyName: 1,
+                indicatorName: 5,
+                noteCategory: null,
+                queryType: null 
+            },
+            {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json, text/plain, */*',
+              'Accept-Language': 'zh-CN,zh;q=0.9',
+              'Authentication': '5cab2e44-7e64-41fa-aea4-d6ffe42f46a32' // 使用正确的Authentication值
+           }
+          }
+        );
+               
+        if (response.data && response.data.rows) {
+            dashboardData.value = response.data.rows.map((item: any) => ({
+                id: item.id,
+                cardTitle: item.cardTitle || '无标题',
+                cardDate: item.cardDate || item.gmtCreate || '未知日期',
+                authorName: item.authorList && item.authorList.length > 0 
+                    ? item.authorList[0].authorName 
+                    : item.submitterName || '未知作者',
+                auditStatus: item.auditStatus || '未知状态',
+                viewCount: Math.floor(Math.random() * 1000) // 模拟数据，实际应从API获取
+            }));
+        }
+    } catch (error) {
+        console.error('获取指标看板数据失败:', error);
+    } finally {
+        loadingDashboard.value = false;
+    }
+};
+
+
+https://iadev.cmfchina.com/dw/edbapply/v2/indicatorSearch/queryClickTreeList  
+
 // 组件挂载时获取数据
 onMounted(() => {
     fetchCategories();
+    fetchDashboardData();
+    fetchIndicatorByTheme();
 });
 
 const platformMenus = [
@@ -161,17 +286,21 @@ const columns: TableColumnsType = [
 ];
 
 const sections = computed(() => {
-  const sectionTitles = ['指标标题', '深度分析', '销售额度', '产量', '库存', '价格'];
+  const sectionTitles = ['指标看板', '深度分析', '销售额度', '产量', '库存', '价格'];
   return sectionTitles.map(title => {
     let data;
     let columns;
 
-    if (title === '指标标题') {
-      data = [
-        { title: '指标1', publishDate: '2023-01-01', viewCount: 100 },
-        { title: '指标2', publishDate: '2023-01-02', viewCount: 200 },
-        { title: '指标3', publishDate: '2023-01-03', viewCount: 150 },
-      ];
+    if (title === '指标看板') {
+   // 使用从API获取的数据
+      data = dashboardData.value.map(item => ({
+        title: item.cardTitle,
+        publishDate: item.cardDate || '未知日期',
+        viewCount: item.viewCount || 0,
+        author: item.authorName || '未知作者',
+        status: item.auditStatus || '未知状态',
+        isNew: new Date(item.cardDate).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000, // 7天内为新
+      }));
       columns = [
         {
           title: '看板标题',
@@ -264,11 +393,32 @@ const sections = computed(() => {
       title,
       data,
       columns,
+      loading: title === '指标看板' ? loadingDashboard.value : false 
     };
   });
 });
 
 const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
+
+const searchKeyword = ref('');
+
+const handleSearch = () => {
+  const baseUrl = 'https://iadev.cmfchina.com/IA/polymerize/search.html  ';
+  const params = new URLSearchParams({
+    orderBy: 'true',
+    keyWordType: 'title',
+    rangeCount: '31',
+    q: searchKeyword.value,
+    query_field: '',
+    query_fie_name: '',
+    field_str: '',
+    field_show: '',
+    scene: 'all'
+  });
+
+  const encodedUrl = `${baseUrl}?${params.toString()}`;
+  window.open(encodedUrl, '_blank');
+};
 </script>
 
 <style scoped>
@@ -289,7 +439,7 @@ const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
 }
 
 .search-bar {
-  background-color: #e0e0e0; /* 更改搜索栏颜色为灰色 */
+  background-color: #ffffff; /* 更改搜索栏颜色为灰色 */
 }
 
 .menu-link {
@@ -298,26 +448,5 @@ const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
 
 .title-cell {
   color: #333; /* 更改标题单元格字体颜色为深灰色 */
-}
-
-/* 添加主题管理链接样式 */
-.admin-link {
-  margin-left: 20px;
-  padding: 5px 10px;
-}
-
-.admin-link a {
-  color: #1890ff;
-  text-decoration: none;
-  font-weight: bold;
-  padding: 5px 10px;
-  border: 1px solid #1890ff;
-  border-radius: 4px;
-  transition: all 0.3s;
-}
-
-.admin-link a:hover {
-  background-color: #1890ff;
-  color: white;
 }
 </style>

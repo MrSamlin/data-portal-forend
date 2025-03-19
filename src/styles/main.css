@@ -131,11 +131,12 @@
   margin: 0;
   padding: 20px 0;
   display: flex;
-  justify-content: flex-start; /* 改为左对齐 */
   width: 100%;
   gap: 40px;
   flex-wrap: nowrap; /* 防止换行 */
   overflow-x: auto; /* 超出时可以滚动 */
+  align-content: space-around;
+  justify-content: center;
 }
 
 .category-card {
