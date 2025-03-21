@@ -183,8 +183,8 @@ onMounted(() => {
   --el-button-hover-border-color: #ff7f00 !important;
   --el-button-active-bg-color: #ff7f00 !important;
   --el-button-active-border-color: #ff7f00 !important;
-  --el-button-text-color: #ffffff !important;
-  --el-button-hover-text-color: #ffffff !important;
+  --el-button-text-color: #ff7f00 !important;
+  --el-button-hover-text-color: #ff8c00 !important;
   --el-button-active-text-color: #ffffff !important;
   transition: all 0.3s;
 }

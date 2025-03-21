@@ -8,7 +8,7 @@
           placeholder="请输入搜索关键词" 
           @keyup.enter="handleSearch"
         />
-        <button @click="handleSearch">搜索</button>
+        <button   @click="handleSearch">搜索</button>
       </div>
     </div>
     

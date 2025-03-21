@@ -281,6 +281,25 @@ onMounted(() => {
     
     .search-input {
       width: 400px;
+
+      :deep(.el-input-group__append) {
+        .el-button {
+          background-color: #ff8c00;
+          border-color: #ff8c00;
+          color: white;
+          padding: 8px 20px;
+          
+          &:hover {
+            background-color: #ff9a22;
+            border-color: #ff9a22;
+          }
+          
+          &:active {
+            background-color: #ff7f00;
+            border-color: #ff7f00;
+          }
+        }
+      }
     }
   }
 }

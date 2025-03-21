@@ -7,7 +7,7 @@ const env = process.env.NODE_ENV || 'development';
 
 // 不同环境的API基础URL
 const API_BASE_URL = {
-  development: 'http://localhost:8081',
+  development: 'http://localhost:7070',
   test: 'http://test-api.example.com',
   production: 'http://prod-api.example.com'
 };
