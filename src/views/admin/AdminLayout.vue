@@ -168,7 +168,7 @@ onMounted(() => {
     }
     
     .tab-content {
-      padding: 20px;
+      padding: 21px;
     }
   }
 }
