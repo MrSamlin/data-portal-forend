@@ -528,7 +528,7 @@ const checkArrowsVisibility = () => {
 }
 
 .search-bar {
-  background-color: #e0e0e0; /* 更改搜索栏颜色为灰色 */
+  background-color:rgb(1, 1, 1); /* 更改搜索栏颜色为灰色 */
 
 }
 
