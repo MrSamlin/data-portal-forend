@@ -30,8 +30,8 @@
         <el-table-column prop="viewCount" label="浏览次数" width="100" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-              {{ scope.row.status === 1 ? '已发布' : '未发布' }}
+            <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'">
+              {{ Number(scope.row.status) === 1 ? '已发布' : '未发布' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -46,15 +46,21 @@
 
       <!-- 分页 -->
       <div class="pagination-container">
-        <el-pagination
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          :page-size="pageSize"
-          :current-page="currentPage"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+        <div class="pagination-wrapper">
+          <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :page-size="10"
+            :current-page="page"
+            :page-count="totalPages"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+          <div class="page-info">
+            当前第 {{ page }} 页 / 共 {{ totalPages }} 页
+          </div>
+        </div>
       </div>
     </el-card>
 
@@ -72,7 +78,7 @@
           <el-input v-model="analysisForm.jumpUrl" placeholder="请输入跳转地址" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-switch v-model="analysisForm.status" :active-value="1" :inactive-value="0" />
+          <el-switch v-model="analysisForm.status" :active-value='1' :inactive-value='0' />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -86,14 +92,29 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import service from '@/utils/axios'
+
+// 分析项接口定义
+interface AnalysisItem {
+  id: number;
+  analysisDimension: string;
+  jumpUrl: string;
+  viewCount: number;
+  status: number; // 确保这里定义为number类型
+  publishDate: string;
+  createDate: string;
+  updateDate: string;
+  createUser: string;
+  updateUser: string;
+}
 
 // 数据加载状态
 const loading = ref(false)
 // 分析列表
-const analysisList = ref([
+const analysisList = ref<AnalysisItem[]>([
   {
     id: 1,
     analysisDimension: '销售趋势分析',
@@ -120,10 +141,12 @@ const analysisFormRef = ref<FormInstance>()
 // 分页相关
 const total = ref(100)
 const pageSize = ref(10)
-const currentPage = ref(1)
+const currentPage = ref(0)
+const page = ref(1)
+const totalPages = ref(1)
 
 // 分析表单数据
-const analysisForm = reactive({
+const analysisForm = reactive<AnalysisItem>({
   id: 0,
   analysisDimension: '',
   jumpUrl: '',
@@ -148,33 +171,65 @@ const rules = reactive<FormRules>({
   ]
 })
 
+
 // 搜索分析
 const handleSearch = () => {
-  loading.value = true
-  // 模拟搜索延迟
-  setTimeout(() => {
-    if (searchKeyword.value) {
-      analysisList.value = analysisList.value.filter(item => 
-        item.analysisDimension.includes(searchKeyword.value)
-      )
-    } else {
-      // 重置为原始数据
-      fetchAnalysisList()
-    }
-    loading.value = false
-  }, 300)
+     page.value = 1
+   currentPage.value = (page.value - 1) * pageSize.value
+  fetchAnalysisList()
 }
+
 
 // 获取分析列表
 const fetchAnalysisList = () => {
   loading.value = true
-  // 模拟API调用
-  setTimeout(() => {
-    // 这里应该调用实际的API
-    loading.value = false
-  }, 300)
-}
+  console.log('page:', page.value);
+    service.post('/api/deepAnalysis/list', {
+      page: currentPage.value,
+      currentPage: currentPage.value,
+      size: pageSize.value,
+       analysisDimension: searchKeyword.value.trim()
+    })
+      .then(response => {
+        if (response.data) {
+          // 处理返回的数据
+          const list = response.data.data || []
+          analysisList.value = list.map((item: any) => ({
+            id: item.id,
+            analysisDimension: item.analysisDimension,
+            jumpUrl: item.jumpUrl,
+            viewCount: item.viewCount,
+            status: Number(item.status), // 确保转换为数字
+            publishDate: item.publishDate,
+            createDate: item.createDate || item.createTime,
+            updateDate: item.updateDate || item.updateTime,
+            createUser: item.createUser || item.user1,
+            updateUser: item.updateUser || item.user1
+          }))
+          // 更新总条数和总页数  
+          total.value = response.data.total || 1
+          totalPages.value =  response.data.totalPages || 1
+        } else {
+          analysisList.value = []
+          total.value = 0
+          totalPages.value = 1
+        }
+      })
+      .catch(error => {
+        console.error('获取深度分析列表失败:', error)
+        ElMessage.error('获取深度分析列表失败')
+        analysisList.value = []
+        total.value = 0
+        totalPages.value = 1
+      })
+      .finally(() => {
+        loading.value = false
+      })
+  }
 
+
+
+ 
 // 新增分析
 const handleAddAnalysis = () => {
   dialogType.value = 'add'
@@ -187,10 +242,18 @@ const handleEditAnalysis = (row: any) => {
   dialogType.value = 'edit'
   Object.keys(analysisForm).forEach(key => {
     if (key in row) {
-      analysisForm[key] = row[key]
+      // 确保status字段被转换为数字类型
+      if (key === 'status') {
+        analysisForm[key] = typeof row[key] === 'string' ? parseInt(row[key]) : row[key]
+      } else {
+        analysisForm[key] = row[key]
+      }
     }
   })
-  dialogVisible.value = true
+  // 确保表单正确渲染后再显示对话框
+  nextTick(() => {
+    dialogVisible.value = true
+  })
 }
 
 // 删除分析
@@ -204,11 +267,19 @@ const handleDeleteAnalysis = (row: any) => {
       type: 'warning'
     }
   ).then(() => {
-    // 模拟删除操作
-    setTimeout(() => {
-      analysisList.value = analysisList.value.filter(item => item.id !== row.id)
-      ElMessage.success('删除成功')
-    }, 300)
+    loading.value = true
+    service.delete(`/api/deepAnalysis/${row.id}`)
+      .then(() => {
+        ElMessage.success('删除成功')
+        fetchAnalysisList() // 重新获取列表数据
+      })
+      .catch(error => {
+        console.error('删除深度分析失败:', error)
+        ElMessage.error('删除失败，请重试')
+      })
+      .finally(() => {
+        loading.value = false
+      })
   }).catch(() => {
     // 取消删除
   })
@@ -220,37 +291,40 @@ const submitAnalysisForm = async () => {
   
   await analysisFormRef.value.validate(async (valid) => {
     if (valid) {
-      // 模拟API调用
-      setTimeout(() => {
-        const now = new Date().toLocaleString()
+      const formData = { ...analysisForm }
+      
+      // 确保status是数字类型
+      formData.status = Number(formData.status)
+      
+      // 转换日期格式
+      if (!formData.publishDate) {
+        formData.publishDate = new Date().toISOString()
+      }
+      
+      loading.value = true
+      try {
         if (dialogType.value === 'add') {
           // 新增
-          const newAnalysis = {
-            ...analysisForm,
-            id: analysisList.value.length + 1,
-            viewCount: 0,
-            publishDate: now,
-            createDate: now,
-            updateDate: now,
-            createUser: 'admin',
-            updateUser: 'admin'
+          const response = await service.post('/api/deepAnalysis', formData)
+          if (response.data) {
+            ElMessage.success('新增成功')
+            fetchAnalysisList() // 重新获取列表
           }
-          analysisList.value.unshift(newAnalysis)
-          ElMessage.success('新增成功')
         } else {
           // 编辑
-          const index = analysisList.value.findIndex(item => item.id === analysisForm.id)
-          if (index !== -1) {
-            analysisList.value[index] = {
-              ...analysisForm,
-              updateDate: now,
-              updateUser: 'admin'
-            }
+          const response = await service.put('/api/deepAnalysis', formData)
+          if (response.data) {
             ElMessage.success('更新成功')
+            fetchAnalysisList() // 重新获取列表
           }
         }
         dialogVisible.value = false
-      }, 300)
+      } catch (error) {
+        console.error('提交深度分析数据失败:', error)
+        ElMessage.error('操作失败，请重试')
+      } finally {
+        loading.value = false
+      }
     }
   })
 }
@@ -275,11 +349,14 @@ const resetForm = () => {
 // 处理分页
 const handleSizeChange = (size: number) => {
   pageSize.value = size
+  page.value = 1
+  currentPage.value = (page.value - 1)*pageSize.value
   fetchAnalysisList()
 }
 
-const handleCurrentChange = (page: number) => {
-  currentPage.value = page
+const handleCurrentChange = (newPage: number) => {
+  page.value = newPage
+ currentPage.value = (page.value - 1)*pageSize.value
   fetchAnalysisList()
 }
 
@@ -332,6 +409,19 @@ onMounted(() => {
     margin-top: 20px;
     display: flex;
     justify-content: center;
+
+    .pagination-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-info {
+      font-size: 14px;
+      color: #606266;
+    }
   }
 }
-</style> 
+</style>    
+ 
