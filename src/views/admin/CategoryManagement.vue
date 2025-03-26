@@ -53,6 +53,25 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页 -->
+      <div class="pagination-container">
+        <div class="pagination-wrapper">
+          <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :page-size="10"
+            :current-page="page"
+            :page-count="totalPages"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+          <div class="page-info">
+            当前第 {{ page }} 页 / 共 {{ totalPages }} 页
+          </div>
+        </div>
+      </div>
     </el-card>
 
     <!-- 新增/编辑主题对话框 -->
@@ -102,7 +121,7 @@
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from 'vue'
-import { categoryApi } from '@/api/category'
+import service from '@/utils/axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -118,6 +137,13 @@ const dialogVisible = ref(false)
 const dialogType = ref('add')
 // 表单引用
 const categoryFormRef = ref<FormInstance>()
+
+// 分页相关
+const total = ref(0)
+const pageSize = ref(10)
+const currentPage = ref(0)
+const page = ref(1)
+const totalPages = ref(1)
 
 // 分类表单数据
 const categoryForm = reactive({
@@ -147,12 +173,24 @@ const rules = reactive<FormRules>({
 // 获取所有顶级分类（主题）
 const fetchTopCategories = async () => {
   loading.value = true
-  try {
-    const response = await categoryApi.getTopCategories()
-    categoryList.value = response.data
+  try {   
+    const response = await service.post('/api/categories/list', {
+      page: page.value,
+      size: pageSize.value,
+      currentPage: currentPage.value,
+      categoryName: searchKeyword.value.trim()
+    })
+    if (response.data) {
+      categoryList.value = response.data.data || []
+      total.value = response.data.total || 0
+      totalPages.value = response.data.totalPages || 1
+    }
   } catch (error) {
     console.error('获取主题列表失败:', error)
     ElMessage.error('获取主题列表失败')
+    categoryList.value = []
+    total.value = 0
+    totalPages.value = 1
   } finally {
     loading.value = false
   }
@@ -161,15 +199,9 @@ const fetchTopCategories = async () => {
 // 搜索分类
 const handleSearch = async () => {
   loading.value = true
-  try {
-    const response = await categoryApi.searchCategories(searchKeyword.value)
-    categoryList.value = response.data
-  } catch (error) {
-    console.error('搜索主题失败:', error)
-    ElMessage.error('搜索主题失败')
-  } finally {
-    loading.value = false
-  }
+   page.value = 1
+  currentPage.value =  (page.value - 1) * pageSize.value
+  fetchTopCategories()
 }
 
 // 新增分类
@@ -202,7 +234,7 @@ const handleDeleteCategory = (row: any) => {
     }
   ).then(async () => {
     try {
-      await categoryApi.deleteCategory(row.categoryId)
+      await service.delete(`/api/categories/${row.categoryId}`)
       ElMessage.success('删除成功')
       fetchTopCategories()
     } catch (error) {
@@ -223,11 +255,11 @@ const submitCategoryForm = async () => {
       try {
         if (dialogType.value === 'add') {
           // 新增分类
-          await categoryApi.addCategory(categoryForm)
+          await service.post('/api/categories', categoryForm)
           ElMessage.success('新增成功')
         } else {
           // 编辑分类
-          await categoryApi.updateCategory(categoryForm.categoryId, categoryForm)
+          await service.put(`/api/categories/${categoryForm.categoryId}`, categoryForm)
           ElMessage.success('更新成功')
         }
         dialogVisible.value = false
@@ -254,6 +286,21 @@ const resetForm = () => {
   categoryForm.icon = ''
   categoryForm.bannerImage = ''
   categoryForm.isVisible = 1
+}
+
+// 处理分页大小变化
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  page.value = 1
+  currentPage.value = (page.value - 1) * pageSize.value
+  fetchTopCategories()
+}
+
+// 处理当前页变化
+const handleCurrentChange = (newPage: number) => {
+  page.value = newPage
+  currentPage.value = (page.value - 1) * pageSize.value
+  fetchTopCategories()
 }
 
 // 页面加载时获取主题列表
@@ -300,6 +347,24 @@ onMounted(() => {
           }
         }
       }
+    }
+  }
+  
+  .pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+
+    .pagination-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-info {
+      font-size: 14px;
+      color: #606266;
     }
   }
 }

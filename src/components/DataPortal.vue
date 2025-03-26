@@ -8,24 +8,37 @@
           placeholder="请输入搜索关键词" 
           @keyup.enter="handleSearch"
         />
-        <button   @click="handleSearch">搜索</button>
+        <button @click="handleSearch">搜索</button>
       </div>
     </div>
     
     <div class="content-wrapper">
       <div class="main-content">
-        <!-- 分类标签 -->
-        <div class="category-row">      
-          <div
-            v-for="category in categories"
-            :key="category.categoryId"
-            class="category-card"
-            :class="{ active: activeTab === category.categoryId }"
-            :style="{ backgroundColor: category.icon }"
-            :data-category="category.categoryId"
-            @click="activeTab = category.categoryId"
-          >
-            <div class="category-label">{{ category.categoryName }}</div>
+        <!-- 分类标签导航区域 -->
+        <div class="category-container">
+          <!-- 左箭头 -->
+          <div class="arrow left-arrow" @click="scrollCategories('left')" v-show="showLeftArrow">
+            &lt;
+          </div>
+          
+          <!-- 分类标签 -->
+          <div class="category-row" ref="categoryRow">      
+            <div
+              v-for="category in categories"
+              :key="category.categoryId"
+              class="category-card"
+              :class="{ active: activeTab === category.categoryId }"
+              :style="{ backgroundColor: category.icon }"
+              :data-category="category.categoryId"
+              @click="activeTab = category.categoryId"
+            >
+              <div class="category-label">{{ category.categoryName }}</div>
+            </div>
+          </div>
+          
+          <!-- 右箭头 -->
+          <div class="arrow right-arrow" @click="scrollCategories('right')" v-show="showRightArrow">
+            &gt;
           </div>
         </div>
 
@@ -124,8 +137,7 @@ const loadingDashboard = ref(false);
 // 获取分类数据
 const fetchCategories = async () => {      
     try {
-        console.log('Fetching categories...');
-        const response = await service.get('/api/categories/top', {  // 保持 /api 前缀
+        const response = await service.get('/api/categories/topList', {  // 保持 /api 前缀
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -133,7 +145,6 @@ const fetchCategories = async () => {
         });
         
         if (response.data) {
-            console.log('Response data:', response.data);
             categories.value = response.data.map((item: CategoryResponse) => ({
                 categoryId: item.categoryId,
                 categoryName: item.categoryName,
@@ -183,7 +194,6 @@ const fetchDashboardData = async () => {
           }
         );
         
-        console.log('Dashboard API response:', response.data);
         
         if (response.data && response.data.rows) {
             dashboardData.value = response.data.rows.map((item: any) => ({
@@ -247,14 +257,28 @@ const fetchIndicatorByTheme = async () => {
     }
 };
 
-
-https://iadev.cmfchina.com/dw/edbapply/v2/indicatorSearch/queryClickTreeList  
+ 
 
 // 组件挂载时获取数据
 onMounted(() => {
     fetchCategories();
     fetchDashboardData();
     fetchIndicatorByTheme();
+    
+    // 初始化检查
+    setTimeout(() => {
+        checkArrowsVisibility();
+    }, 500);
+    
+    // 监听滚动事件
+    if (categoryRow.value) {
+        categoryRow.value.addEventListener('scroll', checkArrowsVisibility);
+    }
+});
+
+// 监听窗口大小变化
+window.addEventListener('resize', () => {
+    checkArrowsVisibility();
 });
 
 const platformMenus = [
@@ -419,6 +443,63 @@ const handleSearch = () => {
   const encodedUrl = `${baseUrl}?${params.toString()}`;
   window.open(encodedUrl, '_blank');
 };
+
+const scrollLeft = () => {
+  // Implementation of scrollLeft function
+};
+
+const scrollRight = () => {
+  // Implementation of scrollRight function
+};
+
+// 添加引用和状态变量
+const categoryRow = ref<HTMLElement | null>(null);
+
+const showLeftArrow = ref(false);
+const showRightArrow = ref(false);
+
+// 滚动分类
+const scrollCategories = (direction: 'left' | 'right') => {
+    if (!categoryRow.value) return;
+
+    const scrollAmount = 200; // 每次滚动的像素值
+    const currentScroll = categoryRow.value.scrollLeft;
+    
+    if (direction === 'left') {
+        categoryRow.value.scrollTo({
+            left: Math.max(0, currentScroll - scrollAmount),
+            behavior: 'smooth'
+        });
+    } else {
+        categoryRow.value.scrollTo({
+            left: currentScroll + scrollAmount,
+            behavior: 'smooth'
+        });
+    }
+    
+    // 更新箭头可见性
+    setTimeout(() => {
+        checkArrowsVisibility();
+    }, 300);
+};
+
+// 检查箭头可见性
+const checkArrowsVisibility = () => {
+    if (!categoryRow.value) return;
+    const { scrollLeft, scrollWidth, clientWidth } = categoryRow.value;
+  // 只有当分类超过可视区域时才考虑显示箭头
+    const hasOverflow = scrollWidth > clientWidth;
+    // 左箭头：当滚动位置大于0时显示
+   // showLeftArrow.value = hasOverflow && scrollLeft > 0;
+    
+    // 右箭头：当还有内容可以向右滚动时显示
+   // showRightArrow.value = hasOverflow && scrollLeft < (scrollWidth - clientWidth - 2);
+
+       // 始终显示左右箭头，只要有内容溢出
+    // 这样无论滚动位置如何，用户都能看到箭头并进行导航
+    showLeftArrow.value = hasOverflow;
+    showRightArrow.value = hasOverflow;
+};
 </script>
 
 <style scoped>
@@ -432,6 +513,14 @@ const handleSearch = () => {
 
 .category-card {
   background-color: #e0e0e0; /* 更改分类卡片颜色为灰色 */
+  min-width: 100px; /* 减小最小宽度 */
+  padding: 8px 15px; /* 减小内边距 */
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  white-space: nowrap; /* 防止文本换行 */
+  font-size: 14px; /* 减小字体大小 */
 }
 
 .section-title {
@@ -439,7 +528,8 @@ const handleSearch = () => {
 }
 
 .search-bar {
-  background-color: #ffffff; /* 更改搜索栏颜色为灰色 */
+  background-color: #e0e0e0; /* 更改搜索栏颜色为灰色 */
+
 }
 
 .menu-link {
@@ -448,5 +538,61 @@ const handleSearch = () => {
 
 .title-cell {
   color: #333; /* 更改标题单元格字体颜色为深灰色 */
+}
+
+/* 添加分类容器样式 */
+.category-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+/* 调整分类行样式使其支持滚动 */
+.category-row {
+  display: flex;
+  overflow-x: auto; /* 允许水平滚动 */
+  scroll-behavior: smooth;
+  width: 100%;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  padding: 5px 0;
+}
+
+/* 隐藏滚动条 */
+.category-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* 箭头样式 */
+.arrow {
+  position: absolute;
+  z-index: 2;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.3); /* 半透明黑色 */
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-weight: bold;
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.arrow:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+  transform: scale(1.1);
+}
+
+.left-arrow {
+  left: 0px;
+}
+
+.right-arrow {
+  right: 0px;
 }
 </style>

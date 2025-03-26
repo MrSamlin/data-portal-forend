@@ -108,7 +108,6 @@ const categories = ref<CategoryResponse[]>([]);
 // 获取分类数据
 const fetchCategories = async () => {      
     try {
-        console.log('Fetching categories...');
         const response = await service.get('/api/categories/top', {  // 保持 /api 前缀
             headers: {
                 'Accept': 'application/json',
@@ -117,7 +116,6 @@ const fetchCategories = async () => {
         });
         
         if (response.data) {
-            console.log('Response data:', response.data);
             categories.value = response.data.map((item: CategoryResponse) => ({
                 categoryId: item.categoryId,
                 categoryName: item.categoryName,
@@ -282,7 +280,6 @@ const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
 const searchKeyword = ref('');
 
 const handleSearch = () => {
-  console.log('进来了');
   const baseUrl = 'https://iadev.cmfchina.com/IA/polymerize/search.html';
   const params = new URLSearchParams({
     orderBy: 'true',

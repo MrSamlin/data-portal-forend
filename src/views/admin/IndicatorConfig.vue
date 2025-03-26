@@ -25,11 +25,15 @@
 
       <!-- 数据表格 -->
       <el-table :data="indicatorList" style="width: 100%" v-loading="loading">
-        <el-table-column prop="metricId" label="指标ID" width="120" />
-        <el-table-column prop="metricCategory" label="指标分类" width="120" />
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="metricsCode" label="指标树代码" width="120" />
         <el-table-column prop="metricName" label="指标名称" />
+        <el-table-column prop="parentId" label="父节点" width="120" />
+        <el-table-column prop="createUser" label="创建人" width="120" />
+        <el-table-column prop="updateUser" label="更新人" width="120" />
+        <el-table-column prop="createDate" label="创建时间" width="180" />
         <el-table-column prop="updateDate" label="更新时间" width="180" />
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" @click="handleEditIndicator(scope.row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDeleteIndicator(scope.row)">删除</el-button>
@@ -39,15 +43,21 @@
 
       <!-- 分页 -->
       <div class="pagination-container">
-        <el-pagination
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          :page-size="pageSize"
-          :current-page="currentPage"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+        <div class="pagination-wrapper">
+          <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :page-size="10"
+            :current-page="page"
+            :page-count="totalPages"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+          <div class="page-info">
+            当前第 {{ page }} 页 / 共 {{ totalPages }} 页
+          </div>
+        </div>
       </div>
     </el-card>
 
@@ -58,23 +68,14 @@
       width="650px"
     >
       <el-form :model="indicatorForm" label-width="100px" :rules="rules" ref="indicatorFormRef">
-        <el-form-item label="指标ID" prop="metricId">
-          <el-input v-model="indicatorForm.metricId" placeholder="请输入指标ID" />
-        </el-form-item>
-        <el-form-item label="节点ID" prop="nodeId">
-          <el-input v-model="indicatorForm.nodeId" placeholder="请输入节点ID" />
-        </el-form-item>
-        <el-form-item label="指标分类" prop="metricCategory">
-          <el-input v-model="indicatorForm.metricCategory" placeholder="请输入指标分类" />
-        </el-form-item>
-        <el-form-item label="分类ID" prop="categoryId">
-          <el-input v-model="indicatorForm.categoryId" placeholder="请输入分类ID" type="number" />
-        </el-form-item>
-        <el-form-item label="父级ID" prop="parentId">
-          <el-input v-model="indicatorForm.parentId" placeholder="请输入父级ID" type="number" />
+        <el-form-item label="指标树代码" prop="metricsCode">
+          <el-input v-model.number="indicatorForm.metricsCode" placeholder="请输入指标代码" :disabled="dialogType === 'edit'" />
         </el-form-item>
         <el-form-item label="指标名称" prop="metricName">
           <el-input v-model="indicatorForm.metricName" placeholder="请输入指标名称" />
+        </el-form-item>
+        <el-form-item label="父节点" prop="parentId">
+          <el-input v-model="indicatorForm.parentId" placeholder="请输入父节点" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -88,28 +89,27 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import service from '@/utils/axios'
+
+// 指标项接口定义
+interface IndicatorItem {
+  id: number;
+  metricsCode: number;
+  metricName: string;
+  parentId: number;
+  createUser: string;
+  updateUser: string;
+  createDate: string;
+  updateDate: string;
+}
 
 // 数据加载状态
 const loading = ref(false)
 // 指标列表
-const indicatorList = ref([
-  {
-    id: 1,
-    metricId: 'M001',
-    nodeId: 'N001',
-    metricCategory: '销售指标',
-    categoryId: 1,
-    parentId: 0,
-    metricName: '销售额',
-    createUser: 'admin',
-    updateUser: 'admin',
-    createDate: '2024-01-15 14:30:00',
-    updateDate: '2024-01-15 14:30:00'
-  }
-])
+const indicatorList = ref<IndicatorItem[]>([])
 
 // 搜索关键词
 const searchKeyword = ref('')
@@ -121,19 +121,18 @@ const dialogType = ref('add')
 const indicatorFormRef = ref<FormInstance>()
 
 // 分页相关
-const total = ref(100)
+const total = ref(0)
 const pageSize = ref(10)
-const currentPage = ref(1)
+const currentPage = ref(0)
+const page = ref(1)
+const totalPages = ref(1)
 
 // 指标表单数据
-const indicatorForm = reactive({
+const indicatorForm = reactive<IndicatorItem>({
   id: 0,
-  metricId: '',
-  nodeId: '',
-  metricCategory: '',
-  categoryId: 0,
-  parentId: 0,
+  metricsCode: 0,
   metricName: '',
+  parentId: 0,
   createUser: '',
   updateUser: '',
   createDate: '',
@@ -142,17 +141,9 @@ const indicatorForm = reactive({
 
 // 表单验证规则
 const rules = reactive<FormRules>({
-  metricId: [
-    { required: true, message: '请输入指标ID', trigger: 'blur' },
-    { max: 50, message: '长度不能超过 50 个字符', trigger: 'blur' }
-  ],
-  nodeId: [
-    { required: true, message: '请输入节点ID', trigger: 'blur' },
-    { max: 50, message: '长度不能超过 50 个字符', trigger: 'blur' }
-  ],
-  metricCategory: [
-    { required: true, message: '请输入指标分类', trigger: 'blur' },
-    { max: 100, message: '长度不能超过 100 个字符', trigger: 'blur' }
+  metricsCode: [
+    { required: true, message: '请输入指标代码', trigger: 'blur' },
+    { type: 'number', message: '指标代码必须为数字', trigger: 'blur' }
   ],
   metricName: [
     { required: true, message: '请输入指标名称', trigger: 'blur' },
@@ -160,32 +151,39 @@ const rules = reactive<FormRules>({
   ]
 })
 
-// 搜索指标
-const handleSearch = () => {
-  loading.value = true
-  // 模拟搜索延迟
-  setTimeout(() => {
-    if (searchKeyword.value) {
-      indicatorList.value = indicatorList.value.filter(item => 
-        item.metricName.includes(searchKeyword.value) || 
-        item.metricId.includes(searchKeyword.value)
-      )
-    } else {
-      // 重置为原始数据
-      fetchIndicatorList()
-    }
-    loading.value = false
-  }, 300)
-}
-
 // 获取指标列表
 const fetchIndicatorList = () => {
   loading.value = true
-  // 模拟API调用
-  setTimeout(() => {
-    // 这里应该调用实际的API
-    loading.value = false
-  }, 300)
+  console.log('page:', page.value);
+  service.post('/api/metrics/list', {
+    page: page.value,
+    currentPage: currentPage.value,
+    size: pageSize.value,
+    metricName: searchKeyword.value.trim()
+  })
+    .then(response => {
+      console.log('response:', response);
+      if (response.data) {
+        indicatorList.value = response.data.data || []
+        total.value = response.data.total || 0
+        pageSize.value = response.data.pageSize || 10
+        totalPages.value = response.data.totalPages || 1
+      }
+    })
+    .catch(error => {
+      console.error('获取指标列表失败:', error)
+      ElMessage.error('获取指标列表失败')
+    })
+    .finally(() => {
+      loading.value = false
+    })
+}
+
+// 搜索指标
+const handleSearch = () => {
+  page.value = 1
+   currentPage.value = (page.value - 1) * pageSize.value
+  fetchIndicatorList()
 }
 
 // 新增指标
@@ -196,18 +194,21 @@ const handleAddIndicator = () => {
 }
 
 // 编辑指标
-const handleEditIndicator = (row: any) => {
+const handleEditIndicator = (row: IndicatorItem) => {
   dialogType.value = 'edit'
   Object.keys(indicatorForm).forEach(key => {
     if (key in row) {
-      indicatorForm[key] = row[key]
+      indicatorForm[key as keyof IndicatorItem] = row[key as keyof IndicatorItem]
     }
   })
-  dialogVisible.value = true
+  // 确保表单正确渲染后再显示对话框
+  nextTick(() => {
+    dialogVisible.value = true
+  })
 }
 
 // 删除指标
-const handleDeleteIndicator = (row: any) => {
+const handleDeleteIndicator = (row: IndicatorItem) => {
   ElMessageBox.confirm(
     `确定要删除指标 "${row.metricName}" 吗？`,
     '警告',
@@ -217,11 +218,19 @@ const handleDeleteIndicator = (row: any) => {
       type: 'warning'
     }
   ).then(() => {
-    // 模拟删除操作
-    setTimeout(() => {
-      indicatorList.value = indicatorList.value.filter(item => item.id !== row.id)
-      ElMessage.success('删除成功')
-    }, 300)
+    loading.value = true
+    service.delete(`/api/metrics/${row.id}`)
+      .then(() => {
+        ElMessage.success('删除成功')
+        fetchIndicatorList() // 重新获取列表数据
+      })
+      .catch(error => {
+        console.error('删除指标失败:', error)
+        ElMessage.error('删除失败，请重试')
+      })
+      .finally(() => {
+        loading.value = false
+      })
   }).catch(() => {
     // 取消删除
   })
@@ -233,35 +242,32 @@ const submitIndicatorForm = async () => {
   
   await indicatorFormRef.value.validate(async (valid) => {
     if (valid) {
-      // 模拟API调用
-      setTimeout(() => {
-        const now = new Date().toLocaleString()
+      const formData = { ...indicatorForm }
+      
+      loading.value = true
+      try {
         if (dialogType.value === 'add') {
           // 新增
-          const newIndicator = {
-            ...indicatorForm,
-            id: indicatorList.value.length + 1,
-            createDate: now,
-            updateDate: now,
-            createUser: 'admin',
-            updateUser: 'admin'
+          const response = await service.post('/api/metrics', formData)
+          if (response.data) {
+            ElMessage.success('新增成功')
+            fetchIndicatorList() // 重新获取列表
           }
-          indicatorList.value.unshift(newIndicator)
-          ElMessage.success('新增成功')
         } else {
           // 编辑
-          const index = indicatorList.value.findIndex(item => item.id === indicatorForm.id)
-          if (index !== -1) {
-            indicatorList.value[index] = {
-              ...indicatorForm,
-              updateDate: now,
-              updateUser: 'admin'
-            }
+          const response = await service.put('/api/metrics', formData)
+          if (response.data) {
             ElMessage.success('更新成功')
+            fetchIndicatorList() // 重新获取列表
           }
         }
         dialogVisible.value = false
-      }, 300)
+      } catch (error) {
+        console.error('提交指标数据失败:', error)
+        ElMessage.error('操作失败，请重试')
+      } finally {
+        loading.value = false
+      }
     }
   })
 }
@@ -272,12 +278,9 @@ const resetForm = () => {
     indicatorFormRef.value.resetFields()
   }
   indicatorForm.id = 0
-  indicatorForm.metricId = ''
-  indicatorForm.nodeId = ''
-  indicatorForm.metricCategory = ''
-  indicatorForm.categoryId = 0
-  indicatorForm.parentId = 0
+  indicatorForm.metricsCode = 0
   indicatorForm.metricName = ''
+  indicatorForm.parentId = 0
   indicatorForm.createUser = ''
   indicatorForm.updateUser = ''
   indicatorForm.createDate = ''
@@ -287,11 +290,14 @@ const resetForm = () => {
 // 处理分页
 const handleSizeChange = (size: number) => {
   pageSize.value = size
+  page.value = 1
+  currentPage.value = (page.value - 1) * pageSize.value
   fetchIndicatorList()
 }
 
-const handleCurrentChange = (page: number) => {
-  currentPage.value = page
+const handleCurrentChange = (newPage: number) => {
+  page.value = newPage
+  currentPage.value = (page.value - 1) * pageSize.value
   fetchIndicatorList()
 }
 
@@ -344,6 +350,18 @@ onMounted(() => {
     margin-top: 20px;
     display: flex;
     justify-content: center;
+
+    .pagination-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-info {
+      font-size: 14px;
+      color: #606266;
+    }
   }
 }
 </style> 

@@ -6,18 +6,18 @@ const API_PREFIX = '/api';
 // 分类相关API
 export const categoryApi = {
   // 获取所有分类
-  getAllCategories() {
-    return service.get(`${API_PREFIX}/categories`)
+  getAllCategories(data: any) {
+    return service.post(`${API_PREFIX}/categories/list`, data)
   },
   
   // 获取顶级分类
-  getTopCategories() {
-    return service.get(`${API_PREFIX}/categories/top`)
+  getTopCategories(data: any) {
+    return service.post(`${API_PREFIX}/categories/top`, data)
   },
   
   // 搜索分类
-  searchCategories(keyword: string) {
-    return service.get(`${API_PREFIX}/categories/search?keyword=${keyword}`)
+  searchCategories(data: any) {
+    return service.post(`${API_PREFIX}/categories/search`, data)
   },
   
   // 获取分类详情

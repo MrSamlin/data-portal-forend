@@ -19,10 +19,6 @@ const service = axios.create({
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 打印环境信息
-    console.log('Current ENV:', process.env.NODE_ENV);
-    console.log('API Base URL:', apiBaseUrl);
-    console.log('Request URL:', config.url);
-    
     // 设置通用请求头
     if (config.headers) {
       config.headers['Content-Type'] = 'application/json'
@@ -46,8 +42,6 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     // 打印响应信息
-    console.log('Response from:', response.config.url);
-    console.log('Response status:', response.status);
     
     // 直接返回数据部分
     return response

@@ -50,6 +50,8 @@ const updateActiveTab = () => {
     activeTab.value = 'analysis'
   } else if (path.includes('/admin/indicators')) {
     activeTab.value = 'indicators'
+  } else if (path.includes('/admin/metrics')) {
+    activeTab.value = 'metrics'
   }
 }
 
@@ -168,7 +170,7 @@ onMounted(() => {
     }
     
     .tab-content {
-      padding: 20px;
+      padding: 21px;
     }
   }
 }

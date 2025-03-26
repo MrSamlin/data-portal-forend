@@ -39,7 +39,7 @@ const routes: Array<RouteRecordRaw> = [
         name: 'IndicatorConfig',
         component: () => import('@/views/admin/IndicatorConfig.vue'),
         meta: { title: '指标配置', requiresAuth: false }
-      }
+      } 
     ]
   }
 ]
