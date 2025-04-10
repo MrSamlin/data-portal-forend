@@ -103,21 +103,90 @@ module.exports = defineConfig({
               res.json(response.data);
             })
             .catch(error => {
-              console.error('转发API请求失败:', error.message);
-              res.status(500).json({ error: 'API请求失败' });
+              console.error(' get 转发API请求失败:', error.message);
+              res.status(500).json({ error: ' get API请求失败' });
             });
       });
+
+
+        // 处理POST请求
+        devServer.app.put('/dataPortal/*', function(req, res) {
+        
+          const isDevelopment = process.env.NODE_ENV === 'development';
+          const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
+          if (isDevelopment) {
+              targetUrl = targetUrlObj.replace('/dataPortal', '');
+          } 
+        // 将请求体作为数据传递
+        let data = '';
+        req.on('data', chunk => {
+          data += chunk;
+        });
+        
+        req.on('end', () => {
+          // 转发POST请求
+          axios.put(targetUrl, data ? JSON.parse(data) : {}, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': req.headers['authorization'] || '',
+              'Authentication': req.headers['authentication'] || ''
+            }
+          })
+            .then(response => {
+              // 设置CORS头
+              res.set('Access-Control-Allow-Origin', '*');
+              res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+              res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Authentication');
+              res.set('Access-Control-Allow-Credentials', 'true');
+              
+              // 返回数据
+              res.json(response.data);
+            })
+            .catch(error => {
+              console.error('转发API PUT 请求失败:', error.message);
+              res.status(error.response?.status || 500).json(error.response?.data || { error: 'PUT API请求失败' });
+            });
+        });
+      });
+
+
+
+      devServer.app.delete('/dataPortal/*', function(req, res) {
+        // 检查当前环境是否为开发环境
+        console.log('delete请求:',req.url);
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
+        let targetUrl = targetUrlObj; // 初始化 targetUrl
+        if (isDevelopment) {
+            targetUrl = targetUrlObj.replace('/dataPortal', '');
+        } 
+          // 转发请求到目标服务器
+          axios.delete(targetUrl)
+            .then(response => {
+              // 设置CORS头
+              res.set('Access-Control-Allow-Origin', '*');
+              res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+              res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Authentication');
+              res.set('Access-Control-Allow-Credentials', 'true');
+              // 返回数据
+              res.json(response.data);
+            })
+            .catch(error => {
+              console.error('deleteAPI请求失败:', error.message);
+              res.status(500).json({ error: 'delete API请求失败' });
+            });
+      });
+
+
       
       // 处理POST请求
       devServer.app.post('/dataPortal/*', function(req, res) {
         
           const isDevelopment = process.env.NODE_ENV === 'development';
           const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
-          console.log('targetUrlObj:',targetUrlObj);
           if (isDevelopment) {
               targetUrl = targetUrlObj.replace('/dataPortal', '');
           } 
-          console.log('targetUrl post:',targetUrl);
         // 将请求体作为数据传递
         let data = '';
         req.on('data', chunk => {

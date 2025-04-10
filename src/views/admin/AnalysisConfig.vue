@@ -25,7 +25,7 @@
 
       <!-- 数据表格 -->
       <el-table :data="analysisList" style="width: 100%" v-loading="loading">
-        <el-table-column prop="analysisDimension" label="分析维度" />
+        <el-table-column prop="analysisName" label="分析维度" />
         <el-table-column prop="jumpUrl" label="跳转地址" show-overflow-tooltip />
         <el-table-column prop="viewCount" label="浏览次数" width="100" />
         <el-table-column prop="status" label="状态" width="100">
@@ -71,8 +71,11 @@
       width="650px"
     >
       <el-form :model="analysisForm" label-width="100px" :rules="rules" ref="analysisFormRef">
-        <el-form-item label="分析维度" prop="analysisDimension">
-          <el-input v-model="analysisForm.analysisDimension" placeholder="请输入分析维度" />
+       <el-form-item label="所属行业" prop="themeCode">
+          <el-input v-model="analysisForm.themeCode" placeholder="请输入分析维度" />
+        </el-form-item>
+        <el-form-item label="分析维度" prop="analysisName">
+          <el-input v-model="analysisForm.analysisName" placeholder="请输入分析维度" />
         </el-form-item>
         <el-form-item label="跳转地址" prop="jumpUrl">
           <el-input v-model="analysisForm.jumpUrl" placeholder="请输入跳转地址" />
@@ -102,7 +105,7 @@ import {userToken,getToken} from '@/composables/useAuth';
 // 分析项接口定义
 interface AnalysisItem {
   id: number;
-  analysisDimension: string;
+  analysisName: string;
   jumpUrl: string;
   viewCount: number;
   status: number; // 确保这里定义为number类型
@@ -119,7 +122,7 @@ const loading = ref(false)
 const analysisList = ref<AnalysisItem[]>([
   {
     id: 1,
-    analysisDimension: '销售趋势分析',
+    analysisName: '销售趋势分析',
     jumpUrl: '/analysis/sales',
     viewCount: 100,
     status: 1,
@@ -150,7 +153,7 @@ const totalPages = ref(1)
 // 分析表单数据
 const analysisForm = reactive<AnalysisItem>({
   id: 0,
-  analysisDimension: '',
+  analysisName: '',
   jumpUrl: '',
   viewCount: 0,
   status: 0,
@@ -163,7 +166,7 @@ const analysisForm = reactive<AnalysisItem>({
 
 // 表单验证规则
 const rules = reactive<FormRules>({
-  analysisDimension: [
+  analysisName: [
     { required: true, message: '请输入分析维度', trigger: 'blur' },
     { max: 100, message: '长度不能超过 100 个字符', trigger: 'blur' }
   ],
@@ -190,7 +193,7 @@ const fetchAnalysisList = () => {
       page: currentPage.value,
       currentPage: currentPage.value,
       size: pageSize.value,
-       analysisDimension: searchKeyword.value.trim()
+       analysisName: searchKeyword.value.trim()
     },{  // 保持 /dataPortal 前缀
         headers: {
             'Accept': 'application/json',
@@ -204,7 +207,7 @@ const fetchAnalysisList = () => {
           const list = response.data.data || []
           analysisList.value = list.map((item: any) => ({
             id: item.id,
-            analysisDimension: item.analysisDimension,
+            analysisName: item.analysisName,
             jumpUrl: item.jumpUrl,
             viewCount: item.viewCount,
             status: Number(item.status), // 确保转换为数字
@@ -267,7 +270,7 @@ const handleEditAnalysis = (row: any) => {
 // 删除分析
 const handleDeleteAnalysis = (row: any) => {
   ElMessageBox.confirm(
-    `确定要删除分析 "${row.analysisDimension}" 吗？`,
+    `确定要删除分析 "${row.analysisName}" 吗？`,
     '警告',
     {
       confirmButtonText: '确定',
@@ -361,7 +364,7 @@ const resetForm = () => {
     analysisFormRef.value.resetFields()
   }
   analysisForm.id = 0
-  analysisForm.analysisDimension = ''
+  analysisForm.analysisName = ''
   analysisForm.jumpUrl = ''
   analysisForm.viewCount = 0
   analysisForm.status = 0

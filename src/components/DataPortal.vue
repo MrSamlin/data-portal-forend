@@ -47,7 +47,7 @@
           <div class="content-sections">
             <div v-for="(section, index) in sections" :key="index" class="content-section">
               <div class="section-title">{{ section.title }}</div>
-              <!-- 使用a-table，但采用简化的方式 -->
+              <!-- 使用a-table -->
               <a-table
                 v-if="section.data && section.data.length > 0"
                 :columns="getSimplifiedColumns(section.title)"
@@ -65,15 +65,18 @@
                 </template>
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.dataIndex === 'title'">
-                    <!-- 打印 record 对象以供调试 -->
                     <a :href="record.jumpUrl" class="ant-link" target="_blank">{{ record.title }}</a>
                   </template>
-                  <!-- 添加 else 模板以确保其他列也能正常渲染 -->
                   <template v-else>
                     {{ record[column.dataIndex] }}
                   </template>
                 </template>
               </a-table>
+              <!-- 无数据或加载中提示 -->
+              <div v-else class="no-data-placeholder">
+                 <span v-if="section.loading">加载中...</span>
+                 <span v-else>暂无数据</span>
+              </div>
             </div>
           </div>
         </div>
@@ -492,35 +495,34 @@ const sections = computed(() => {
     sectionTitles = [...baseTitles, ...metricNames];
   } else {
     sectionTitles = [...baseTitles, ...metricNames];
-  //  sectionTitles = ['指标看板', '深度分析', '销售额度', '产量', '库存', '价格'];
   }
   
   const result = sectionTitles.map(title => {
     let sectionData = [];
-    let sectionLoading = false; // 添加局部 loading 变量
+    let sectionLoading = false;
     
     try {
       if (title === '指标看板') {
         const dashboardItems = dashboardData.value;
-        if(dashboardItems && dashboardItems.length > 0){
+        if (dashboardItems && dashboardItems.length > 0) {
           sectionData = dashboardItems.map(item => ({
             key: item.id || `item-${Math.random().toString(36).substring(2)}`,
             title: item.cardTitle || '无标题',
             publishDate: item.cardDate || '未知日期',
             viewCount: item.viewCount || Math.floor(Math.random() * 1000),
-            jumpUrl: item.jumpUrl // 添加 jumpUrl 字段
+            jumpUrl: item.jumpUrl 
           }));
         }
-        sectionLoading = loadingDashboard.value; // 链接到看板的 loading
+        sectionLoading = loadingDashboard.value;
       } else if (title === '深度分析') {
         const analysisItems = deepAnalysisData.value;
         if (analysisItems && analysisItems.length > 0) {
           sectionData = analysisItems.map(item => ({
-            key: item.id, // 使用 id 作为 key
-            title: item.analysisName || '无名称', // 使用 analysisName 作为 title
-            publishDate: item.publishDate ? new Date(item.publishDate).toLocaleDateString() : '未知日期', // 使用 publishDate 并格式化
-            viewCount: item.viewCount || 0, // 使用 viewCount
-            jumpUrl: item.jumpUrl // 添加 jumpUrl 字段
+            key: item.id,
+            title: item.analysisName || '无名称',
+            publishDate: item.publishDate ? new Date(item.publishDate).toLocaleDateString() : '未知日期',
+            viewCount: item.viewCount || 0,
+            jumpUrl: item.jumpUrl 
           }));
         }
         sectionLoading = loadingDeepAnalysis.value;
@@ -530,21 +532,23 @@ const sections = computed(() => {
           { key: '2', title: '数据2', dataSource: '台湾经济处', updateTime: '2023-01-02' },
           { key: '3', title: '数据3', dataSource: '台湾经济处', updateTime: '2023-01-03' },
         ];
+        sectionLoading = false; 
       } else if (title === '产量' || title === '库存' || title === '价格') {
         sectionData = [
           { key: '1', title: '数据1', dataSource: '台湾经济处', updateTime: '2023-01-01' },
           { key: '2', title: '数据2', dataSource: '台湾经济处', updateTime: '2023-01-02' },
           { key: '3', title: '数据3', dataSource: '台湾经济处', updateTime: '2023-01-03' },
         ];
+        sectionLoading = false;
       }
     } catch (err) {
-      console.error(`处理${title}数据时出错:`, err);
+      console.error(`处理 ${title} 数据时出错:`, err);
     }
     
     return {
       title,
       data: sectionData,
-      loading: sectionLoading // 使用对应的 loading 状态
+      loading: sectionLoading
     };
   });
   
@@ -645,9 +649,15 @@ const getSimplifiedColumns = (sectionTitle) => {
       { title: '发布日期', dataIndex: 'publishDate', key: 'publishDate', width: '25%' }, // 标题改为 发布日期
       { title: '浏览次数', dataIndex: 'viewCount', key: 'viewCount', width: '25%' } // 标题改为 浏览次数
     ];
-  } else if (sectionTitle === '销售额度' || sectionTitle === '产量' || sectionTitle === '库存' || sectionTitle === '价格') {
+  } else if (sectionTitle === '销售额度') {
     return [
       { title: '数据名称', dataIndex: 'title', key: 'title', width: '40%' },
+      { title: '数据来源', dataIndex: 'dataSource', key: 'dataSource', width: '30%' },
+      { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: '30%' }
+    ];
+  } else if (sectionTitle === '产量' || sectionTitle === '库存' || sectionTitle === '价格') {
+    return [
+      { title: '数据指标', dataIndex: 'title', key: 'title', width: '40%' },
       { title: '数据来源', dataIndex: 'dataSource', key: 'dataSource', width: '30%' },
       { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: '30%' }
     ];
@@ -818,13 +828,15 @@ const getSimplifiedColumns = (sectionTitle) => {
   text-decoration: underline;
 }
 
-.no-data {
-  padding: 20px;
+.no-data-placeholder {
+  width: 100%;
+  padding: 40px 20px;
   text-align: center;
   color: #999;
-  background: #f9f9f9;
-  border: 1px solid #eaeaea;
+  background-color: #fff;
+  border: 1px solid #e8e8e8;
   border-radius: 4px;
+  margin-top: 10px;
 }
 </style>
      

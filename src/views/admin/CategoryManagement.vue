@@ -85,8 +85,9 @@
           <div class="theme-code-input">
             <el-input
               v-model="categoryForm.themeCode"
-              placeholder="请输入或选择行业作为主题代码"
-              :disabled="(isThemeCodeSelected && dialogType === 'add') || dialogType === 'edit'"
+              placeholder="请选择行业 (可多选)"
+              :disabled="dialogType === 'edit'"
+              readonly
             />
             <el-button
               v-if="dialogType === 'add'"
@@ -99,7 +100,7 @@
           </div>
         </el-form-item>
         <el-form-item label="主题名称" prop="categoryName">
-          <el-input v-model="categoryForm.categoryName" placeholder="请输入主题名称 (选择行业后可自动填充)" />
+          <el-input v-model="categoryForm.categoryName" placeholder="请输入主题名称" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="categoryForm.description" type="textarea" placeholder="请输入描述" />
@@ -154,15 +155,16 @@
         </el-input>
       </div>
 
-      <el-table :data="industryList" style="width: 100%" v-loading="industryLoading" @row-click="selectIndustry">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="title" label="行业名称" />
-        <el-table-column prop="value" label="行业代码 (将用作主题代码)" />
-        <el-table-column label="操作" width="120">
-          <template #default="scope">
-            <el-button type="primary" size="small" @click.stop="selectIndustry(scope.row)">选择</el-button>
-          </template>
-        </el-table-column>
+      <el-table 
+      ref="industryTableRef"
+      :data="industryList"
+       style="width: 100%"
+        v-loading="industryLoading"
+         @selection-change="handleIndustrySelectionChange">
+          <el-table-column type="selection" width="55" /> <!-- 复选框列 -->
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="title" label="行业名称" />
+          <el-table-column prop="value" label="行业代码" />
       </el-table>
       
       <div class="pagination-container">
@@ -179,6 +181,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="industrySelectVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmIndustrySelection">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -192,6 +195,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { userToken, getToken } from '@/composables/useAuth'
 import axios, { isAxiosError } from 'axios'
+import type { ElTable } from 'element-plus'
 
 // 数据加载状态
 const loading = ref(false)
@@ -205,8 +209,6 @@ const dialogVisible = ref(false)
 const dialogType = ref('add')
 // 表单引用
 const categoryFormRef = ref<FormInstance>();
-// 是否选择主题代码
-const isThemeCodeSelected = ref(false);
 
 // 分页相关
 const total = ref(0)
@@ -233,7 +235,7 @@ const categoryForm = reactive({
 // 表单验证规则
 const rules = reactive<FormRules>({
   themeCode: [
-    { required: true, message: '请选择或输入行业作为主题代码', trigger: 'change' }
+    { required: true, message: '请选择行业', trigger: 'change' }
   ],
   categoryName: [
     { required: true, message: '请输入主题名称', trigger: 'blur' },
@@ -278,17 +280,6 @@ const fetchTopCategories = async () => {
     loading.value = false
   }
 }
-
-// 修改：处理行业选择
-const handleIndustrySelect = (row: any) => {
-  categoryForm.themeCode = row.value;
-  categoryForm.categoryName = row.title;
-  isThemeCodeSelected.value = true;
-  ElMessage.success(`已选择行业：${row.title} (代码: ${row.value})`);
-
-  categoryFormRef.value?.validateField('themeCode');
-  categoryFormRef.value?.validateField('categoryName');
-};
 
 // 搜索分类
 const handleSearch = async () => {
@@ -401,7 +392,10 @@ const resetForm = () => {
   categoryForm.icon = ''
   categoryForm.bannerImage = ''
   categoryForm.isVisible = 1
-  isThemeCodeSelected.value = false
+  if (industryTableRef.value) {
+    industryTableRef.value.clearSelection();
+  }
+  selectedIndustries.value = []; // 清空存储的选中项
 }
 
 // 处理分页大小变化
@@ -432,6 +426,8 @@ const industryLoading = ref(false)
 const industryTotal = ref(0)
 const industryPageSize = ref(10)
 const industryPage = ref(1)
+const industryTableRef = ref<InstanceType<typeof ElTable>>(); // 表格引用
+const selectedIndustries = ref<any[]>([]); // 存储选中的行业行
 
 // 修改：打开行业选择对话框
 const openIndustrySelect = () => {
@@ -447,7 +443,7 @@ const searchIndustries = async () => {
   const apiCurrentPage = industryPage.value - 1;
 
   try {
-    const response = await service.post('/industryMapper/list', {
+    const response = await service.post('/dataPortal/industryMapper/list', {
       page: industryPage.value,
       size: industryPageSize.value,
       currentPage: apiCurrentPage,
@@ -484,7 +480,7 @@ const searchIndustries = async () => {
 
 // 修改：选择行业
 const selectIndustry = (row: any) => {
-  handleIndustrySelect(row);
+  handleIndustrySelectionChange(row);
   industrySelectVisible.value = false;
 };
 
@@ -492,6 +488,37 @@ const selectIndustry = (row: any) => {
 const handleIndustryPageChange = (newPage: number) => {
   industryPage.value = newPage;
   searchIndustries();
+};
+
+// 处理表格多选变化
+const handleIndustrySelectionChange = (selection: any[]) => {
+  selectedIndustries.value = selection; // 更新选中的行
+};
+
+// 确认行业选择
+const confirmIndustrySelection = () => {
+  if (selectedIndustries.value.length === 0) {
+    ElMessage.warning('请至少选择一个行业');
+    return;
+  }
+  // 提取选中的 value 并用逗号拼接
+  categoryForm.themeCode = selectedIndustries.value
+    .map(item => item.value)
+    .join(',');
+
+  industrySelectVisible.value = false; // 关闭对话框
+  // 手动触发验证，让红星提示消失
+  categoryFormRef.value?.validateField('themeCode');
+};
+
+// 取消行业选择
+const cancelIndustrySelection = () => {
+  industrySelectVisible.value = false;
+  // 清空可能已选中的项，防止干扰下次打开
+  selectedIndustries.value = [];
+  if (industryTableRef.value) {
+     industryTableRef.value.clearSelection();
+  }
 };
 </script>
 

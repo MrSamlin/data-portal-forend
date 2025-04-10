@@ -57,10 +57,10 @@
                       <span v-if="record.isNew" class="new-tag">NEW</span>
                     </div>
                   </template>
-                  <template v-if="column.key === 'analysisDimension'">
+                  <template v-if="column.key === 'analysisName'">
                     <div class="title-cell">
-                      <a :href="`/details/${record.analysisDimension}`" style="color: black;">
-                        <span>{{ record.analysisDimension }}</span>
+                      <a :href="`/details/${record.analysisName}`" style="color: black;">
+                        <span>{{ record.analysisName }}</span>
                       </a>
                     </div>
                   </template>
