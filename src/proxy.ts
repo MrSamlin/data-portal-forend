@@ -16,7 +16,7 @@ interface ProxyConfig {
 
 // 不同环境的API基础URL
 const API_BASE_URL = {
-  development: 'http://localhost:8081',
+  development: 'http://localhost:7070',
   test: 'http://test-api.example.com',
   production: 'http://prod-api.example.com'
 };
@@ -29,12 +29,12 @@ const createProxy = (env: string): ProxyConfig => {
   const target = API_BASE_URL[env as keyof typeof API_BASE_URL];
   
   return {
-    '/api': {
+    '/dataPortal': {
       target,
       changeOrigin: true,
       ws: true,
       pathRewrite: {
-        '^/api': '/api' // 保持API路径不变
+        '^/dataPortal': '/dataPortal' // 保持API路径不变
       }
     }
   };

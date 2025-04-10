@@ -47,12 +47,16 @@
           <div class="content-sections">
             <div v-for="(section, index) in sections" :key="index" class="content-section">
               <div class="section-title">{{ section.title }}</div>
+              <!-- 使用a-table，但采用简化的方式 -->
               <a-table
-                :columns="section.columns"
-                :data-source="section.data"
+                v-if="section.data && section.data.length > 0"
+                :columns="getSimplifiedColumns(section.title)"
+                :dataSource="section.data"
                 :pagination="false"
                 :loading="section.loading"
-                size="small"
+                size="middle"
+                rowKey="key"
+                bordered
               >
                 <template #headerCell="{ column }">
                   <span :style="{ color: '#777' }">
@@ -60,20 +64,13 @@
                   </span>
                 </template>
                 <template #bodyCell="{ column, record }">
-                  <template v-if="column.key === 'title'">
-                    <div class="title-cell">
-                      <a :href="`/details/${record.title}`" style="color: black;">
-                        <span>{{ record.title }}</span>
-                      </a>
-                      <span v-if="record.isNew" class="new-tag">NEW</span>
-                    </div>
+                  <template v-if="column.dataIndex === 'title'">
+                    <!-- 打印 record 对象以供调试 -->
+                    <a :href="record.jumpUrl" class="ant-link" target="_blank">{{ record.title }}</a>
                   </template>
-                  <template v-if="column.key === 'analysisDimension'">
-                    <div class="title-cell">
-                      <a :href="`/details/${record.analysisDimension}`" style="color: black;">
-                        <span>{{ record.analysisDimension }}</span>
-                      </a>
-                    </div>
+                  <!-- 添加 else 模板以确保其他列也能正常渲染 -->
+                  <template v-else>
+                    {{ record[column.dataIndex] }}
                   </template>
                 </template>
               </a-table>
@@ -104,15 +101,17 @@
 
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeMount, watch, shallowRef } from 'vue';
 import axios from 'axios';
 import type { TableColumnsType } from 'ant-design-vue';
 import service from '@/utils/axios';
+import { getToken } from '@/composables/useAuth';
 
 interface CategoryResponse {
     categoryId: string;
     categoryName: string;
-    icon: string;  
+    icon: string;
+    themeCode: string;
 }
 
 
@@ -129,18 +128,85 @@ interface DashboardItem {
     viewCount?: number;  
 }
 
-const activeTab = ref('car'); // 确保 activeTab 被声明
+// 深度分析数据接口定义 (更新)
+interface DeepAnalysisItem {
+  id: number; // 使用 number 类型对应 Integer
+  analysisName: string;
+  jumpUrl?: string; // 可选
+  viewCount?: number;
+  status?: string;
+  publishDate?: string | Date; // 日期可以是字符串或Date对象
+  createDate?: string | Date;
+  updateDate?: string | Date;
+  createUser?: string;
+  updateUser?: string;
+  themeCode?: string;
+}
+
+// 指标数据接口定义
+interface MetricsItem {
+  id: number;
+  metricsCode?: number; // 可能为 null，用可选
+  metricName: string;
+  parentId?: number;
+  createUser?: string;
+  updateUser?: string;
+  createDate?: string | Date;
+  updateDate?: string | Date;
+  themeCode?: string;
+}
+
+const activeTab = ref(''); // 确保 activeTab 被声明
+
+// 在script setup顶部添加
+const currentThemeCode = ref('')
+
+
 const categories = ref<CategoryResponse[]>([]);
-const dashboardData = ref<DashboardItem[]>([]);
+const dashboardData = shallowRef<DashboardItem[]>([]);
 const loadingDashboard = ref(false);
+// 新增：指标数据和加载状态
+const metricsData = shallowRef<MetricsItem[]>([]);
+const loadingMetrics = ref(false);
+
+
+// 新增：深度分析数据和加载状态
+const deepAnalysisData = shallowRef<DeepAnalysisItem[]>([]);
+const loadingDeepAnalysis = ref(false);
+
+// 页面级别的token状态
+const pageToken = ref('')
+
+// 获取最新token的方法
+const refreshToken = async () => {
+  try {
+    pageToken.value = await getToken()
+  } catch (error) {
+    console.error('刷新token失败:', error)
+    throw error
+  }
+}
+
+// 组件挂载前刷新token
+onBeforeMount(async () => {
+    if(process.env.NODE_ENV==='production'){
+      await refreshToken()
+    }
+
+})
 
 // 获取分类数据
 const fetchCategories = async () => {      
-    try {
-        const response = await service.get('/api/categories/topList', {  // 保持 /api 前缀
+    try {   
+ // 每次请求前确保token是最新的
+         if(process.env.NODE_ENV==='production'){
+            await refreshToken()
+          }
+        const response = await service.get('/dataPortal/categories/topList', {
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authentication': pageToken.value
             }
         });
         
@@ -148,8 +214,13 @@ const fetchCategories = async () => {
             categories.value = response.data.map((item: CategoryResponse) => ({
                 categoryId: item.categoryId,
                 categoryName: item.categoryName,
-                icon: item.icon
+                icon: item.icon,
+                themeCode: item.themeCode
             }));
+            if(!activeTab.value){
+               currentThemeCode.value = response.data[0].categoryName
+              console.log('currentThemeCode',currentThemeCode.value);
+            }
         }
     } catch (error) {
         console.error('获取分类数据失败:', error);
@@ -164,11 +235,55 @@ const fetchCategories = async () => {
 };
 
 
+
+
+// 获取深度分析数据列表
+const fetchDeepAnalysisList = async () => {      
+    loadingDeepAnalysis.value = true;
+    try {   
+        if(process.env.NODE_ENV==='production'){
+           await refreshToken()
+         }
+         
+        const themeCodeForPath = currentThemeCode.value || 'default';
+        const apiUrl = `/dataPortal/deepAnalysis/topList/${themeCodeForPath}`;
+
+        // 明确指定期望的响应类型为 DeepAnalysisItem 数组
+        const response = await service.get<DeepAnalysisItem[]>(apiUrl, { 
+            headers: {
+                'Accept': 'application/json',
+                'user_token': pageToken.value 
+            }
+        });
+
+        // 检查返回的数据是否为数组
+        if (Array.isArray(response.data)) { 
+          deepAnalysisData.value = response.data; // 直接赋值数组
+        } else {
+          deepAnalysisData.value = []; 
+          console.warn('获取深度分析数据为空或返回结构不是数组'); // 更新警告信息
+        }
+    } catch (error) {
+        console.error('获取深度分析数据失败:', error);
+        deepAnalysisData.value = []; 
+        if (axios.isAxiosError(error)) {
+            console.error('Error details:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+        }
+    } finally {
+        loadingDeepAnalysis.value = false;
+    }
+};
+
+
 // 获取指标看板数据
 const fetchDashboardData = async () => {
     loadingDashboard.value = true;
-    try {
-        const response = await service.post('/api/edbapply/v2/card/listEdbCardPage',
+    try {    
+        const response = await service.post('/dw/edbapply/v2/card/listEdbCardPage',
             {
                 createUser: 1,
                 pageNumber: 1,
@@ -177,35 +292,30 @@ const fetchDashboardData = async () => {
                 author: null,
                 industryId: null,
                 startCardDate: null,
-                endCardDate: null
+                endCardDate: null,
+                researchDirection: currentThemeCode.value
             },
             {
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json, text/plain, */*',
               'Accept-Language': 'zh-CN,zh;q=0.9',
-              'Authentication': '5cab2e44-7e64-41fa-aea4-d6ffe42f46a32', // 使用正确的Authentication值
-              'Cache-Control': 'no-cache',
-              'Origin': 'https://iadev.cmfchina.com      ',
-              'Token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoi5YiY5p2wIiwic291cmNlIjoiY21mX2NhbGVuZGFyIiwidXNlck5hbWUiOiJsaXVqaWUiLCJleHAiOjE3NDI0NTYwODEsInVzZXJJZCI6IjIxNzk2MTAifQ.YAehN4-PFoTegyDfP7OHjJ8KyVGknJiOTX5ohNZ8VTA'
-              // Cookie可能也很重要，但在前端代码中通常会自动发送
-              // 'Cookie': 'JSESSIONID=9851DE2660A9D37D27BB31D40920CDB3; sajssdk_2015_cross_new_user=1; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%22%E5%88%98%E6%9D%B02179610%22%2C%22first_id%22%3A%22195ad158455ac2-0f0490ae2da6cd8-26001a51-2073600-195ad158456dc1%22%2C%22props%22%3A%7B%7D%2C%22%24device_id%22%3A%22195ad158455ac2-0f0490ae2da6cd8-26001a51-2073600-195ad158456dc1%22%7D'
+              'Authentication': pageToken.value,
+              'Cache-Control': 'no-cache'
             }
           }
         );
-        
-        
-        if (response.data && response.data.rows) {
-            dashboardData.value = response.data.rows.map((item: any) => ({
+        if (response.data.data && response.data.data.rows) {
+            const newData = response.data.data.rows.map((item: any) => ({
                 id: item.id,
                 cardTitle: item.cardTitle || '无标题',
                 cardDate: item.cardDate || item.gmtCreate || '未知日期',
                 authorName: item.authorList && item.authorList.length > 0 
                     ? item.authorList[0].authorName 
                     : item.submitterName || '未知作者',
-                auditStatus: item.auditStatus || '未知状态',
                 viewCount: Math.floor(Math.random() * 1000) // 模拟数据，实际应从API获取
             }));
+               dashboardData.value =  newData;
         }
     } catch (error) {
         console.error('获取指标看板数据失败:', error);
@@ -214,13 +324,16 @@ const fetchDashboardData = async () => {
     }
 };
 
-
-
+ 
 // 根据主题获取  指标数据
 const fetchIndicatorByTheme = async () => {
     loadingDashboard.value = true;
+         
     try {
-        const response = await service.post('/api/edbapply/v2/indicatorSearch/queryClickTreeList',
+     if(process.env.NODE_ENV==='production'){
+            await refreshToken()
+          }
+        const response = await service.post('/dw/edbapply/v2/indicatorSearch/queryClickTreeList',
             {
                 indicatorCode: 1,
                 indicatorKeyName: 1,
@@ -232,23 +345,15 @@ const fetchIndicatorByTheme = async () => {
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json, text/plain, */*',
+              'Authentication': pageToken.value,
               'Accept-Language': 'zh-CN,zh;q=0.9',
-              'Authentication': '5cab2e44-7e64-41fa-aea4-d6ffe42f46a32' // 使用正确的Authentication值
            }
           }
         );
                
+            
         if (response.data && response.data.rows) {
-            dashboardData.value = response.data.rows.map((item: any) => ({
-                id: item.id,
-                cardTitle: item.cardTitle || '无标题',
-                cardDate: item.cardDate || item.gmtCreate || '未知日期',
-                authorName: item.authorList && item.authorList.length > 0 
-                    ? item.authorList[0].authorName 
-                    : item.submitterName || '未知作者',
-                auditStatus: item.auditStatus || '未知状态',
-                viewCount: Math.floor(Math.random() * 1000) // 模拟数据，实际应从API获取
-            }));
+     
         }
     } catch (error) {
         console.error('获取指标看板数据失败:', error);
@@ -257,22 +362,91 @@ const fetchIndicatorByTheme = async () => {
     }
 };
 
+
+//  获取指标数据列表
+const fetchMetricsData = async (themeCode: string | null) => {      
+    loadingMetrics.value = true;
+    try {   
+        if(process.env.NODE_ENV==='production'){
+           await refreshToken()
+         }
+        const themeCodeForPath = themeCode || 'default';
+        const apiUrl = `/dataPortal/metrics/topList/${themeCodeForPath}`;
+        const response = await service.get<MetricsItem[]>(apiUrl, { 
+            headers: {
+                'Accept': 'application/json',
+                'user_token': pageToken.value 
+            }
+        });
+        if (Array.isArray(response.data)) { 
+          metricsData.value = response.data;
+        } else {
+          metricsData.value = []; 
+          console.warn('获取指标数据为空或返回结构不是数组');
+        }
+    } catch (error) {
+        console.error('获取指标数据失败:', error);
+        metricsData.value = []; 
+        if (axios.isAxiosError(error)) {
+            console.error('Error details:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+        }
+    } finally {
+        loadingMetrics.value = false;
+    }
+};
+
+
+ 
+// 监听activeTab变化
+watch(activeTab, async (newTab) => {
+  if (categories.value && categories.value.length > 0) {
+    const currentCategory = categories.value.find(cat => cat.categoryId === newTab)
+    if (currentCategory) {
+      currentThemeCode.value = currentCategory.themeCode;
+    } else {
+      currentThemeCode.value = ''; // 如果找不到分类，清空 themeCode
+    }
+  }
+  // 确保在 themeCode 更新后再调用 API
+  if (newTab) { // 确保有新tab才请求
+    await Promise.all([
+      fetchDashboardData(),
+      fetchDeepAnalysisList(),
+      fetchMetricsData(currentThemeCode.value)
+    ]);
+  }
+});    
+
+
  
 
 // 组件挂载时获取数据
-onMounted(() => {
-    fetchCategories();
-    fetchDashboardData();
-    fetchIndicatorByTheme();
-    
-    // 初始化检查
-    setTimeout(() => {
-        checkArrowsVisibility();
-    }, 500);
-    
-    // 监听滚动事件
-    if (categoryRow.value) {
-        categoryRow.value.addEventListener('scroll', checkArrowsVisibility);
+onMounted(async () => {
+    try {
+      if(process.env.NODE_ENV==='production'){
+              // 确保token已刷新
+          await refreshToken()
+            }
+       await fetchCategories()
+     await fetchDashboardData()
+     await fetchIndicatorByTheme()
+      await fetchDeepAnalysisList()
+        await fetchMetricsData(currentThemeCode.value)
+        // 初始化检查
+        setTimeout(() => {
+            checkArrowsVisibility();
+        }, 500);
+        
+        // 监听滚动事件
+        if (categoryRow.value) {
+            categoryRow.value.addEventListener('scroll', checkArrowsVisibility);
+        }
+    } catch (error) {
+        console.error('初始化数据失败:', error)
     }
 });
 
@@ -310,116 +484,71 @@ const columns: TableColumnsType = [
 ];
 
 const sections = computed(() => {
-  const sectionTitles = ['指标看板', '深度分析', '销售额度', '产量', '库存', '价格'];
-  return sectionTitles.map(title => {
-    let data;
-    let columns;
-
-    if (title === '指标看板') {
-   // 使用从API获取的数据
-      data = dashboardData.value.map(item => ({
-        title: item.cardTitle,
-        publishDate: item.cardDate || '未知日期',
-        viewCount: item.viewCount || 0,
-        author: item.authorName || '未知作者',
-        status: item.auditStatus || '未知状态',
-        isNew: new Date(item.cardDate).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000, // 7天内为新
-      }));
-      columns = [
-        {
-          title: '看板标题',
-          dataIndex: 'title',
-          key: 'title',
-        },
-        {
-          title: '发布日期',
-          dataIndex: 'publishDate',
-          key: 'publishDate',
-        },
-        {
-          title: '浏览次数',
-          dataIndex: 'viewCount',
-          key: 'viewCount',
-        },
-      ];
-    } else if (title === '深度分析') {
-      data = [
-        { title: '维度1', publishDate: '2023-01-01', viewCount: 80 },
-        { title: '维度2', publishDate: '2023-01-02', viewCount: 120 },
-        { title: '维度3', publishDate: '2023-01-03', viewCount: 90 },
-      ];
-      columns = [
-        {
-          title: '分析维度',
-          dataIndex: 'title',
-          key: 'title',
-        },
-        {
-          title: '发布日期',
-          dataIndex: 'publishDate',
-          key: 'publishDate',
-        },
-        {
-          title: '浏览次数',
-          dataIndex: 'viewCount',
-          key: 'viewCount',
-        },
-      ];
-    } else if (title === '销售额度') {
-      data = [
-        { title: '数据1', dataSource: '台湾经济处', updateTime: '2023-01-01' },
-        { title: '数据2', dataSource: '台湾经济处', updateTime: '2023-01-02' },
-        { title: '数据3', dataSource: '台湾经济处', updateTime: '2023-01-03' },
-      ];
-      columns = [
-        {
-          title: '看板标题',
-          dataIndex: 'title',
-          key: 'title',
-        },
-        {
-          title: '数据来源',
-          dataIndex: 'dataSource',
-          key: 'dataSource',
-        },
-        {
-          title: '更新时间',
-          dataIndex: 'updateTime',
-          key: 'updateTime',
-        },
-      ];
-    } else if (title === '产量' || title === '库存' || title === '价格') {
-      data = [
-        { title: '数据1', dataSource: '台湾经济处', updateTime: '2023-01-01' },
-        { title: '数据2', dataSource: '台湾经济处', updateTime: '2023-01-02' },
-        { title: '数据3', dataSource: '台湾经济处', updateTime: '2023-01-03' },
-      ];
-      columns = [
-        {
-          title: '数据指标',
-          dataIndex: 'title',
-          key: 'title',
-        },
-        {
-          title: '数据来源',
-          dataIndex: 'dataSource',
-          key: 'dataSource',
-        },
-        {
-          title: '更新时间',
-          dataIndex: 'updateTime',
-          key: 'updateTime',
-        },
-      ];
+  let sectionTitles;
+  console.log('metricsData',metricsData.value);
+  const baseTitles = ['指标看板', '深度分析'];
+   const metricNames = metricsData.value.map(item => item.metricName);
+  if(process.env.NODE_ENV==='production'){
+    sectionTitles = [...baseTitles, ...metricNames];
+  } else {
+    sectionTitles = [...baseTitles, ...metricNames];
+  //  sectionTitles = ['指标看板', '深度分析', '销售额度', '产量', '库存', '价格'];
+  }
+  
+  const result = sectionTitles.map(title => {
+    let sectionData = [];
+    let sectionLoading = false; // 添加局部 loading 变量
+    
+    try {
+      if (title === '指标看板') {
+        const dashboardItems = dashboardData.value;
+        if(dashboardItems && dashboardItems.length > 0){
+          sectionData = dashboardItems.map(item => ({
+            key: item.id || `item-${Math.random().toString(36).substring(2)}`,
+            title: item.cardTitle || '无标题',
+            publishDate: item.cardDate || '未知日期',
+            viewCount: item.viewCount || Math.floor(Math.random() * 1000),
+            jumpUrl: item.jumpUrl // 添加 jumpUrl 字段
+          }));
+        }
+        sectionLoading = loadingDashboard.value; // 链接到看板的 loading
+      } else if (title === '深度分析') {
+        const analysisItems = deepAnalysisData.value;
+        if (analysisItems && analysisItems.length > 0) {
+          sectionData = analysisItems.map(item => ({
+            key: item.id, // 使用 id 作为 key
+            title: item.analysisName || '无名称', // 使用 analysisName 作为 title
+            publishDate: item.publishDate ? new Date(item.publishDate).toLocaleDateString() : '未知日期', // 使用 publishDate 并格式化
+            viewCount: item.viewCount || 0, // 使用 viewCount
+            jumpUrl: item.jumpUrl // 添加 jumpUrl 字段
+          }));
+        }
+        sectionLoading = loadingDeepAnalysis.value;
+      } else if (title === '销售额度') {
+        sectionData = [
+          { key: '1', title: '数据1', dataSource: '台湾经济处', updateTime: '2023-01-01' },
+          { key: '2', title: '数据2', dataSource: '台湾经济处', updateTime: '2023-01-02' },
+          { key: '3', title: '数据3', dataSource: '台湾经济处', updateTime: '2023-01-03' },
+        ];
+      } else if (title === '产量' || title === '库存' || title === '价格') {
+        sectionData = [
+          { key: '1', title: '数据1', dataSource: '台湾经济处', updateTime: '2023-01-01' },
+          { key: '2', title: '数据2', dataSource: '台湾经济处', updateTime: '2023-01-02' },
+          { key: '3', title: '数据3', dataSource: '台湾经济处', updateTime: '2023-01-03' },
+        ];
+      }
+    } catch (err) {
+      console.error(`处理${title}数据时出错:`, err);
     }
-
+    
     return {
       title,
-      data,
-      columns,
-      loading: title === '指标看板' ? loadingDashboard.value : false 
+      data: sectionData,
+      loading: sectionLoading // 使用对应的 loading 状态
     };
   });
+  
+  return result;
 });
 
 const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
@@ -427,7 +556,7 @@ const currentEnv = ref(process.env.VUE_APP_ENV); // 获取当前环境
 const searchKeyword = ref('');
 
 const handleSearch = () => {
-  const baseUrl = 'https://iadev.cmfchina.com/IA/polymerize/search.html  ';
+  const baseUrl = 'https://iadev.cmfchina.com/IA/polymerize/search.html';
   const params = new URLSearchParams({
     orderBy: 'true',
     keyWordType: 'title',
@@ -500,6 +629,31 @@ const checkArrowsVisibility = () => {
     showLeftArrow.value = hasOverflow;
     showRightArrow.value = hasOverflow;
 };
+
+// 添加获取简化列的方法
+const getSimplifiedColumns = (sectionTitle) => {
+  if (sectionTitle === '指标看板') {
+    return [
+      { title: '看板标题', dataIndex: 'title', key: 'title', width: '50%' },
+      { title: '发布日期', dataIndex: 'publishDate', key: 'publishDate', width: '25%' },
+      { title: '浏览次数', dataIndex: 'viewCount', key: 'viewCount', width: '25%' }
+    ];
+  } else if (sectionTitle === '深度分析') {
+    // 更新深度分析的列定义以匹配新数据结构
+    return [
+      { title: '分析名称', dataIndex: 'title', key: 'title', width: '50%' }, // 标题改为 分析名称
+      { title: '发布日期', dataIndex: 'publishDate', key: 'publishDate', width: '25%' }, // 标题改为 发布日期
+      { title: '浏览次数', dataIndex: 'viewCount', key: 'viewCount', width: '25%' } // 标题改为 浏览次数
+    ];
+  } else if (sectionTitle === '销售额度' || sectionTitle === '产量' || sectionTitle === '库存' || sectionTitle === '价格') {
+    return [
+      { title: '数据名称', dataIndex: 'title', key: 'title', width: '40%' },
+      { title: '数据来源', dataIndex: 'dataSource', key: 'dataSource', width: '30%' },
+      { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: '30%' }
+    ];
+  }
+  return [];
+};
 </script>
 
 <style scoped>
@@ -528,7 +682,9 @@ const checkArrowsVisibility = () => {
 }
 
 .search-bar {
-  background-color:rgb(1, 1, 1); /* 更改搜索栏颜色为灰色 */
+ 
+  background-color: #ffffff    /* 更改搜索栏颜色为灰色 */
+ 
 
 }
 
@@ -595,5 +751,81 @@ const checkArrowsVisibility = () => {
 .right-arrow {
   right: 0px;
 }
-</style>
 
+/* 备用表格样式 */
+.fallback-table {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.fallback-header {
+  display: flex;
+  background-color: #f7f7f7;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
+
+.fallback-row {
+  display: flex;
+  border-bottom: 1px solid #eee;
+}
+
+.fallback-row:last-child {
+  border-bottom: none;
+}
+
+.fallback-cell {
+  padding: 8px 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 自定义表格样式 */
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #eaeaea;
+  margin-top: 10px;
+}
+
+.custom-table th, 
+.custom-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.custom-table th {
+  background-color: #f5f5f5;
+  font-weight: 500;
+  color: #333;
+}
+
+.custom-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.title-link {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.title-link:hover {
+  text-decoration: underline;
+}
+
+.no-data {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  background: #f9f9f9;
+  border: 1px solid #eaeaea;
+  border-radius: 4px;
+}
+</style>
+     
+     

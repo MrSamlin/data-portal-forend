@@ -20,8 +20,11 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 // 配置 axios
-axios.defaults.baseURL = 'http://localhost:8081'
+axios.defaults.baseURL = process.env.NODE_ENV === 'production' 
+  ? '/dataPortal'  // 生产环境使用相对路径
+  : 'http://localhost:7070'  // 开发环境使用本地服务器
 
 app.use(router);
 app.use(ElementPlus);
+app.use(Antd);
 app.mount('#app')

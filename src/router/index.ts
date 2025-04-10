@@ -1,4 +1,18 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory, RouteRecordRaw } from 'vue-router'
+
+
+const getBasePath = ()=> {
+  switch (process.env.NODE_ENV){
+    case 'production':
+      return  '/IA/data-portal/'
+    case 'test':
+      return '/IA/data-portal/'
+    default:
+      return '/'
+
+  }
+}
+
 
 // 扩展 RouteMeta 接口
 declare module 'vue-router' {
@@ -13,7 +27,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/components/DataPortal.vue'),
+    component: () => import('@/components/dataPortal.vue'),
     meta: { title: '首页' }
   },
   {
@@ -39,13 +53,16 @@ const routes: Array<RouteRecordRaw> = [
         name: 'IndicatorConfig',
         component: () => import('@/views/admin/IndicatorConfig.vue'),
         meta: { title: '指标配置', requiresAuth: false }
-      }
+      } 
     ]
   }
 ]
 
+const history = createWebHashHistory();
+ 
+
 const router = createRouter({
-  history: createWebHistory(),
+  history,
   routes
 })
 
@@ -67,4 +84,4 @@ router.beforeEach((to, from, next) => {
   }
 })
 
-export default router
+export default router    

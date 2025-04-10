@@ -81,8 +81,25 @@
       width="600px"
     >
       <el-form :model="categoryForm" label-width="100px" :rules="rules" ref="categoryFormRef">
+       <el-form-item label="主题代码" prop="themeCode">
+          <div class="theme-code-input">
+            <el-input
+              v-model="categoryForm.themeCode"
+              placeholder="请输入或选择行业作为主题代码"
+              :disabled="(isThemeCodeSelected && dialogType === 'add') || dialogType === 'edit'"
+            />
+            <el-button
+              v-if="dialogType === 'add'"
+              type="primary"
+              style="margin-left: 10px;"
+              @click="openIndustrySelect"
+            >
+              选择行业
+            </el-button>
+          </div>
+        </el-form-item>
         <el-form-item label="主题名称" prop="categoryName">
-          <el-input v-model="categoryForm.categoryName" placeholder="请输入主题名称" />
+          <el-input v-model="categoryForm.categoryName" placeholder="请输入主题名称 (选择行业后可自动填充)" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="categoryForm.description" type="textarea" placeholder="请输入描述" />
@@ -116,6 +133,55 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 修改：行业选择对话框 (原主题选择对话框) -->
+    <el-dialog
+      title="选择行业"
+      v-model="industrySelectVisible"
+      width="800px"
+    >
+      <div class="search-area">
+        <el-input
+          v-model="industrySearchKeyword"
+          placeholder="搜索行业名称"
+          class="search-input"
+          clearable
+          @keyup.enter="searchIndustries"
+        >
+          <template #append>
+            <el-button @click="searchIndustries">搜索</el-button>
+          </template>
+        </el-input>
+      </div>
+
+      <el-table :data="industryList" style="width: 100%" v-loading="industryLoading" @row-click="selectIndustry">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="title" label="行业名称" />
+        <el-table-column prop="value" label="行业代码 (将用作主题代码)" />
+        <el-table-column label="操作" width="120">
+          <template #default="scope">
+            <el-button type="primary" size="small" @click.stop="selectIndustry(scope.row)">选择</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      
+      <div class="pagination-container">
+        <el-pagination
+          background
+          layout="prev, pager, next"
+          :total="industryTotal"
+          :current-page="industryPage"
+          :page-size="industryPageSize"
+          @current-change="handleIndustryPageChange"
+        />
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="industrySelectVisible = false">取消</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -124,6 +190,8 @@ import { ref, reactive, onMounted } from 'vue'
 import service from '@/utils/axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { userToken, getToken } from '@/composables/useAuth'
+import axios, { isAxiosError } from 'axios'
 
 // 数据加载状态
 const loading = ref(false)
@@ -136,7 +204,9 @@ const dialogVisible = ref(false)
 // 对话框类型：add-新增，edit-编辑
 const dialogType = ref('add')
 // 表单引用
-const categoryFormRef = ref<FormInstance>()
+const categoryFormRef = ref<FormInstance>();
+// 是否选择主题代码
+const isThemeCodeSelected = ref(false);
 
 // 分页相关
 const total = ref(0)
@@ -148,6 +218,7 @@ const totalPages = ref(1)
 // 分类表单数据
 const categoryForm = reactive({
   categoryId: '',
+  themeCode: '',
   categoryName: '',
   description: '',
   detailedDescription: '',
@@ -161,6 +232,9 @@ const categoryForm = reactive({
 
 // 表单验证规则
 const rules = reactive<FormRules>({
+  themeCode: [
+    { required: true, message: '请选择或输入行业作为主题代码', trigger: 'change' }
+  ],
   categoryName: [
     { required: true, message: '请输入主题名称', trigger: 'blur' },
     { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
@@ -174,12 +248,18 @@ const rules = reactive<FormRules>({
 const fetchTopCategories = async () => {
   loading.value = true
   try {   
-    const response = await service.post('/api/categories/list', {
+    const response = await service.post('/dataPortal/categories/list', {
       page: page.value,
       size: pageSize.value,
       currentPage: currentPage.value,
       categoryName: searchKeyword.value.trim()
-    })
+    },{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
     if (response.data) {
       categoryList.value = response.data.data || []
       total.value = response.data.total || 0
@@ -188,6 +268,9 @@ const fetchTopCategories = async () => {
   } catch (error) {
     console.error('获取主题列表失败:', error)
     ElMessage.error('获取主题列表失败')
+    if (isAxiosError(error)) {
+        console.error('Axios error details:', error.response?.data);
+    }
     categoryList.value = []
     total.value = 0
     totalPages.value = 1
@@ -195,6 +278,17 @@ const fetchTopCategories = async () => {
     loading.value = false
   }
 }
+
+// 修改：处理行业选择
+const handleIndustrySelect = (row: any) => {
+  categoryForm.themeCode = row.value;
+  categoryForm.categoryName = row.title;
+  isThemeCodeSelected.value = true;
+  ElMessage.success(`已选择行业：${row.title} (代码: ${row.value})`);
+
+  categoryFormRef.value?.validateField('themeCode');
+  categoryFormRef.value?.validateField('categoryName');
+};
 
 // 搜索分类
 const handleSearch = async () => {
@@ -234,7 +328,13 @@ const handleDeleteCategory = (row: any) => {
     }
   ).then(async () => {
     try {
-      await service.delete(`/api/categories/${row.categoryId}`)
+      await service.delete(`/dataPortal/categories/${row.categoryId}`,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
       ElMessage.success('删除成功')
       fetchTopCategories()
     } catch (error) {
@@ -255,18 +355,33 @@ const submitCategoryForm = async () => {
       try {
         if (dialogType.value === 'add') {
           // 新增分类
-          await service.post('/api/categories', categoryForm)
+          await service.post('/dataPortal/categories', categoryForm,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
           ElMessage.success('新增成功')
         } else {
           // 编辑分类
-          await service.put(`/api/categories/${categoryForm.categoryId}`, categoryForm)
+          await service.put(`/dataPortal/categories/${categoryForm.categoryId}`, categoryForm,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
           ElMessage.success('更新成功')
         }
         dialogVisible.value = false
         fetchTopCategories()
       } catch (error) {
         console.error('操作失败:', error)
-        ElMessage.error('操作失败')
+        ElMessage.error('操作失败，请检查控制台获取详细信息')
+        if (isAxiosError(error)) {
+             console.error('Axios error details:', error.response?.data);
+        }
       }
     }
   })
@@ -278,14 +393,15 @@ const resetForm = () => {
     categoryFormRef.value.resetFields()
   }
   categoryForm.categoryId = ''
+  categoryForm.themeCode = ''
   categoryForm.categoryName = ''
-  categoryForm.parentId = null
   categoryForm.description = ''
   categoryForm.detailedDescription = ''
   categoryForm.displayOrder = 1
   categoryForm.icon = ''
   categoryForm.bannerImage = ''
   categoryForm.isVisible = 1
+  isThemeCodeSelected.value = false
 }
 
 // 处理分页大小变化
@@ -307,6 +423,76 @@ const handleCurrentChange = (newPage: number) => {
 onMounted(() => {
   fetchTopCategories()
 })
+
+// 修改：行业选择对话框 (原主题选择对话框)
+const industrySelectVisible = ref(false)
+const industrySearchKeyword = ref('')
+const industryList = ref([])
+const industryLoading = ref(false)
+const industryTotal = ref(0)
+const industryPageSize = ref(10)
+const industryPage = ref(1)
+
+// 修改：打开行业选择对话框
+const openIndustrySelect = () => {
+  industrySelectVisible.value = true;
+  industryPage.value = 1;
+  industrySearchKeyword.value = '';
+  searchIndustries();
+}
+
+// 修改：搜索行业
+const searchIndustries = async () => {
+  industryLoading.value = true;
+  const apiCurrentPage = industryPage.value - 1;
+
+  try {
+    const response = await service.post('/industryMapper/list', {
+      page: industryPage.value,
+      size: industryPageSize.value,
+      currentPage: apiCurrentPage,
+      value: industrySearchKeyword.value.trim()
+    },{
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        }
+      });
+
+    console.log("Industry API Response:", response.data);
+
+    if (response.data) {
+      industryList.value = response.data.data || [];
+      industryTotal.value = response.data.total || 0;
+    } else {
+       industryList.value = [];
+       industryTotal.value = 0;
+       console.warn("获取行业列表响应为空或无数据");
+    }
+  } catch (error) {
+    console.error('获取行业列表失败:', error);
+    ElMessage.error('获取行业列表失败');
+    if (isAxiosError(error)) {
+        console.error('Axios error details:', error.response?.data);
+    }
+    industryList.value = [];
+    industryTotal.value = 0;
+  } finally {
+    industryLoading.value = false;
+  }
+};
+
+// 修改：选择行业
+const selectIndustry = (row: any) => {
+  handleIndustrySelect(row);
+  industrySelectVisible.value = false;
+};
+
+// 修改：处理行业分页变化
+const handleIndustryPageChange = (newPage: number) => {
+  industryPage.value = newPage;
+  searchIndustries();
+};
 </script>
 
 <style lang="scss" scoped>
@@ -350,6 +536,11 @@ onMounted(() => {
     }
   }
   
+  .theme-code-input {
+    display: flex;
+    align-items: center;
+  }
+  
   .pagination-container {
     margin-top: 20px;
     display: flex;
@@ -369,5 +560,4 @@ onMounted(() => {
   }
 }
 </style>  
-
  

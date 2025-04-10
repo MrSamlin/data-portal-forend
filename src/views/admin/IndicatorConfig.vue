@@ -94,6 +94,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import service from '@/utils/axios'
 
+import {userToken,getToken} from '@/composables/useAuth';
+
 // 指标项接口定义
 interface IndicatorItem {
   id: number;
@@ -154,13 +156,19 @@ const rules = reactive<FormRules>({
 // 获取指标列表
 const fetchIndicatorList = () => {
   loading.value = true
-  console.log('page:', page.value);
-  service.post('/api/metrics/list', {
+  console.log('userToken.value:', userToken.value);
+  service.post('/dataPortal/metrics/list', {
     page: page.value,
     currentPage: currentPage.value,
     size: pageSize.value,
     metricName: searchKeyword.value.trim()
-  })
+  },{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
     .then(response => {
       console.log('response:', response);
       if (response.data) {
@@ -219,7 +227,13 @@ const handleDeleteIndicator = (row: IndicatorItem) => {
     }
   ).then(() => {
     loading.value = true
-    service.delete(`/api/metrics/${row.id}`)
+    service.delete(`/dataPortal/metrics/${row.id}`,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
       .then(() => {
         ElMessage.success('删除成功')
         fetchIndicatorList() // 重新获取列表数据
@@ -248,14 +262,26 @@ const submitIndicatorForm = async () => {
       try {
         if (dialogType.value === 'add') {
           // 新增
-          const response = await service.post('/api/metrics', formData)
+          const response = await service.post('/dataPortal/metrics', formData,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
           if (response.data) {
             ElMessage.success('新增成功')
             fetchIndicatorList() // 重新获取列表
           }
         } else {
           // 编辑
-          const response = await service.put('/api/metrics', formData)
+          const response = await service.put('/dataPortal/metrics', formData,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
           if (response.data) {
             ElMessage.success('更新成功')
             fetchIndicatorList() // 重新获取列表

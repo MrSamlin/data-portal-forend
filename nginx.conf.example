@@ -1,0 +1,54 @@
+server {
+    listen 80;
+    server_name iamdev.cmfchina.com;
+
+    # 主应用路径
+    location /IA/data-portal/ {
+        alias /usr/local/nginx/html/IA/data-portal/;
+        index index.html;
+        try_files $uri $uri/ /IA/data-portal/index.html;
+        
+        # 添加跨域支持
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization';
+    }
+
+    # 静态资源路径
+    location /IA/data-portal/static/ {
+        alias /usr/local/nginx/html/IA/data-portal/static/;
+        expires max;
+        add_header Cache-Control "public";
+        
+        # 添加跨域支持
+        add_header 'Access-Control-Allow-Origin' '*';
+    }
+
+    # API 代理配置
+    location /IA/data-portal/api/ {
+        proxy_pass http://localhost:7070/;  # 根据vue.config.js中的API_BASE_URL配置
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # 添加跨域支持
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization';
+    }
+
+    # 指标看板API代理配置
+    location /IA/data-portal/api/edbapply/ {
+        proxy_pass https://iadev.cmfchina.com/dw/edbapply/;  # 根据vue.config.js中的DASHBOARD_API_URL配置
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # 添加跨域支持
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization';
+    }
+} 

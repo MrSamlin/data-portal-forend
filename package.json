@@ -2,6 +2,10 @@
   "name": "data-portal",
   "private": true,
   "version": "0.0.0",
+  "engines": {
+    "node": ">=10.0.0",
+    "npm": ">=6.0.0"
+  },
   "scripts": {
     "dev": "vue-cli-service serve",
     "serve": "vue-cli-service serve",

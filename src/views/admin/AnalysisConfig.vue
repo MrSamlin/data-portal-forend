@@ -97,6 +97,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import service from '@/utils/axios'
 
+import {userToken,getToken} from '@/composables/useAuth';
+
 // 分析项接口定义
 interface AnalysisItem {
   id: number;
@@ -183,13 +185,19 @@ const handleSearch = () => {
 // 获取分析列表
 const fetchAnalysisList = () => {
   loading.value = true
-  console.log('page:', page.value);
-    service.post('/api/deepAnalysis/list', {
+
+    service.post('/dataPortal/deepAnalysis/list', {
       page: currentPage.value,
       currentPage: currentPage.value,
       size: pageSize.value,
        analysisDimension: searchKeyword.value.trim()
-    })
+    },{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
       .then(response => {
         if (response.data) {
           // 处理返回的数据
@@ -268,7 +276,13 @@ const handleDeleteAnalysis = (row: any) => {
     }
   ).then(() => {
     loading.value = true
-    service.delete(`/api/deepAnalysis/${row.id}`)
+    service.delete(`/dataPortal/deepAnalysis/${row.id}`,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
       .then(() => {
         ElMessage.success('删除成功')
         fetchAnalysisList() // 重新获取列表数据
@@ -305,14 +319,26 @@ const submitAnalysisForm = async () => {
       try {
         if (dialogType.value === 'add') {
           // 新增
-          const response = await service.post('/api/deepAnalysis', formData)
+          const response = await service.post('/dataPortal/deepAnalysis', formData,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
           if (response.data) {
             ElMessage.success('新增成功')
             fetchAnalysisList() // 重新获取列表
           }
         } else {
           // 编辑
-          const response = await service.put('/api/deepAnalysis', formData)
+          const response = await service.put('/dataPortal/deepAnalysis', formData,{  // 保持 /dataPortal 前缀
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+              'Authentication': userToken.value // 使用正确的Authentication值
+        }
+      })
           if (response.data) {
             ElMessage.success('更新成功')
             fetchAnalysisList() // 重新获取列表
