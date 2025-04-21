@@ -53,7 +53,13 @@ const routes: Array<RouteRecordRaw> = [
         name: 'IndicatorConfig',
         component: () => import('@/views/admin/IndicatorConfig.vue'),
         meta: { title: '指标配置', requiresAuth: false }
-      } 
+      } ,
+      { // --- 新增的路由配置 ---
+        path: 'industryMapper',
+        name: 'industryMapperConfig',
+        component:  () => import('@/views/admin/IndustryMapper.vue'),  
+        meta: { title: '行业字典维护', requiresAuth: false }
+      }
     ]
   }
 ]

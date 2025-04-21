@@ -56,7 +56,7 @@
   right: 0;
   width: 200px;
   height: 120px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffd700' opacity='0.1'%3E%3Cpath d='M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg    ' viewBox='0 0 24 24' fill='%23ffd700' opacity='0.1'%3E%3Cpath d='M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -71,6 +71,7 @@
   gap: 10px;
   position: relative;
   z-index: 1;
+  background-color: #ffffff;
 }
 
 .search-bar input {
@@ -153,8 +154,13 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  min-width: unset; /* 移除最小宽度限制 */
-  padding: 20px;
+  min-width: 100px;
+  padding: 8px 15px;
+  background-color: #e0e0e0;
+  text-align: center;
+  transition: transform 0.2s;
+  white-space: nowrap;
+  font-size: 14px;
 }
 
 /* 背景虚化图标 */
@@ -174,23 +180,23 @@
 
 /* 每个卡片的背景图标 */
 .category-card[data-category="car"]::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M18.92 5.01C18.72 4.42 18.16 4 17.5 4h-11c-.66 0-1.21.42-1.42 1.01L3 11v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 6h10.29l1.04 3H5.81l1.04-3zM19 16H5v-4.66l.12-.34h13.77l.11.34V16z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg    ' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M18.92 5.01C18.72 4.42 18.16 4 17.5 4h-11c-.66 0-1.21.42-1.42 1.01L3 11v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 6h10.29l1.04 3H5.81l1.04-3zM19 16H5v-4.66l.12-.34h13.77l.11.34V16z'/%3E%3C/svg%3E");
 }
 
 .category-card[data-category="macro"]::before {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg    '%3E%3Cpath d='M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z'/%3E%3C/svg%3E");
 }
 
 .category-card[data-category="property"]::before {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg    '%3E%3Cpath d='M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z'/%3E%3C/svg%3E");
 }
 
 .category-card[data-category="logistics"]::before {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg    '%3E%3Cpath d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z'/%3E%3C/svg%3E");
 }
 
 .category-card[data-category="tech"]::before {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg    '%3E%3Cpath d='M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z'/%3E%3C/svg%3E");
 }
 
 /* 渐变遮罩 */
@@ -395,7 +401,7 @@
 
 .menu-link {
   flex: 1;
-  color: #6A5ACD;
+  color: #555;
   text-decoration: none;
   transition: all 0.3s;
   display: flex;
@@ -450,6 +456,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #333;
 }
 
 /* NEW 标签样式 */
@@ -465,7 +472,7 @@
 
 /* 标题栏样式 */
 .title-bar {
-  background: #fff;
+  background-color: #dcdcdc;
   padding: 16px 20px;
   margin: -20px -20px 20px -20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -499,4 +506,208 @@
   background-image: url('../assets/bg-header.png');
   /* 或者如果图片在 public 目录下 */
   /* background-image: url('../../public/bg-header.png'); */
-} 
+}
+
+/* Styles migrated from DataPortal.vue */
+.data-portal {
+  background-color: #f5f5f5;
+}
+
+.title-bar {
+  background-color: #dcdcdc;
+}
+
+.category-card {
+  background-color: #e0e0e0;
+  min-width: 100px;
+  padding: 8px 15px;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.section-title {
+  color: #333;
+}
+
+.search-bar {
+  background-color: #ffffff;
+}
+
+.menu-link {
+  color: #555;
+}
+
+.title-cell {
+  color: #333;
+}
+
+/* 添加分类容器样式 */
+.category-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+/* 调整分类行样式使其支持滚动 */
+.category-row {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 5px 0;
+  justify-content: flex-start;
+}
+
+/* 隐藏滚动条 */
+.category-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* 箭头样式 */
+.arrow {
+  position: absolute;
+  z-index: 2;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-weight: bold;
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.arrow:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+  transform: scale(1.1);
+}
+
+.left-arrow {
+  left: 0px;
+}
+
+.right-arrow {
+  right: 0px;
+}
+
+/* 备用表格样式 */
+.fallback-table {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.fallback-header {
+  display: flex;
+  background-color: #f7f7f7;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
+
+.fallback-row {
+  display: flex;
+  border-bottom: 1px solid #eee;
+}
+
+.fallback-row:last-child {
+  border-bottom: none;
+}
+
+.fallback-cell {
+  padding: 8px 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 自定义表格样式 */
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #eaeaea;
+  margin-top: 10px;
+}
+
+.custom-table th, 
+.custom-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.custom-table th {
+  background-color: #f5f5f5;
+  font-weight: 500;
+  color: #333;
+}
+
+.custom-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.title-link {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.title-link:hover {
+  text-decoration: underline;
+}
+
+.no-data-placeholder {
+  width: 100%;
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  background-color: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+
+/** 分页样式  **/
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.pagination-container .page-info {
+  font-size: 14px;
+  color: #606266;
+}
+
+
+.pagination-container .pagination-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+
+/**  新增按钮样式  */
+.operation-card {
+  margin-bottom: 20px;
+}
+
+.operation-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}     

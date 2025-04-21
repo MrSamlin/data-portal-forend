@@ -14,6 +14,7 @@
               <el-tab-pane label="主题导航维护" name="categories"></el-tab-pane>
               <el-tab-pane label="深度分析配置" name="analysis"></el-tab-pane>
               <el-tab-pane label="指标配置" name="indicators"></el-tab-pane>
+              <el-tab-pane label="行业字典维护" name="industryMapper"></el-tab-pane>
             </el-tabs>
           </div>
           
@@ -50,6 +51,8 @@ const updateActiveTab = () => {
     activeTab.value = 'analysis'
   } else if (path.includes('/admin/indicators')) {
     activeTab.value = 'indicators'
+  } else if (path.includes('/admin/industryMapper')) {
+    activeTab.value = 'industryMapper'
   }
 }
 

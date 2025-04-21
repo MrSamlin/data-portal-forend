@@ -4,11 +4,6 @@ import axios, { InternalAxiosRequestConfig } from 'axios'
 // 获取环境变量
 const apiBaseUrl = process.env.NODE_ENV === 'production' ? 'https://iadev.cmfchina.com' : '/'
 
-// 根据环境获取API前缀
-const getApiPrefix = () => {
-  return process.env.NODE_ENV === 'development' ? '' : '/dataPortal'
-}
-
 const service = axios.create({
   baseURL: apiBaseUrl,  // 使用相对路径，让代理处理
   timeout: 10000,

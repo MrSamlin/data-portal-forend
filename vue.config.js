@@ -1,9 +1,9 @@
 const { defineConfig } = require('@vue/cli-service');
 const path = require('path');
 const axios = require('axios');
-
+import { isDevelopment } from '@/utils/env';
 // 获取当前环境
-const env = process.env.NODE_ENV || 'development';
+const env = isDevelopment ? 'development' : 'production';
 
 // 不同环境的API基础URL
 const API_BASE_URL = {
@@ -84,7 +84,6 @@ module.exports = defineConfig({
       // 处理GET请求
       devServer.app.get('/dataPortal/*', function(req, res) {
         // 检查当前环境是否为开发环境
-        const isDevelopment = process.env.NODE_ENV === 'development';
         const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
         let targetUrl = targetUrlObj; // 初始化 targetUrl
         if (isDevelopment) {
@@ -112,7 +111,6 @@ module.exports = defineConfig({
         // 处理POST请求
         devServer.app.put('/dataPortal/*', function(req, res) {
         
-          const isDevelopment = process.env.NODE_ENV === 'development';
           const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
           if (isDevelopment) {
               targetUrl = targetUrlObj.replace('/dataPortal', '');
@@ -154,7 +152,6 @@ module.exports = defineConfig({
       devServer.app.delete('/dataPortal/*', function(req, res) {
         // 检查当前环境是否为开发环境
         console.log('delete请求:',req.url);
-        const isDevelopment = process.env.NODE_ENV === 'development';
         const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
         let targetUrl = targetUrlObj; // 初始化 targetUrl
         if (isDevelopment) {
@@ -181,8 +178,6 @@ module.exports = defineConfig({
       
       // 处理POST请求
       devServer.app.post('/dataPortal/*', function(req, res) {
-        
-          const isDevelopment = process.env.NODE_ENV === 'development';
           const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
           if (isDevelopment) {
               targetUrl = targetUrlObj.replace('/dataPortal', '');
