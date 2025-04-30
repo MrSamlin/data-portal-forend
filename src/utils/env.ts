@@ -1,7 +1,0 @@
-// 环境判断
-export const isDevelopment = process.env.NODE_ENV === 'development';
-export const isProduction = process.env.NODE_ENV === 'production';
-export const isTest = process.env.NODE_ENV === 'test';
-
-export const defaultParentCode = '727167761399846748';
-

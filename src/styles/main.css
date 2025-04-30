@@ -289,7 +289,7 @@
 }
 
 .content-section {
-  flex: 1 1 calc(50% - 10px);
+  flex: 0 1 calc(50% - 10px);
   min-width: 300px;
   overflow: hidden;
   border: 1px solid #f0f0f0;

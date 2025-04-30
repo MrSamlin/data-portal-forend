@@ -16,7 +16,7 @@ interface ProxyConfig {
 
 // 不同环境的API基础URL
 const API_BASE_URL = {
-  development: 'http://localhost:7070',
+  development: 'http://localhost:8311',
   test: 'http://test-api.example.com',
   production: 'http://prod-api.example.com'
 };

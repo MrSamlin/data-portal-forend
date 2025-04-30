@@ -20,8 +20,17 @@
             选择主题
           </el-button>
         </div>
+        
       </el-form-item>
 
+      <!-- 添加行业代码字段 -->
+      <el-form-item label="行业代码" prop="themeCode"  v-if="false">
+        <el-input
+          v-model="indicatorForm.themeCode"
+          placeholder="选择主题后自动填充"
+          readonly
+        />
+      </el-form-item>
       <!-- 指标代码 -->
       <el-form-item label="指标代码" prop="metricsCode">
         <!-- Changed: Input readonly, add select button -->
@@ -29,12 +38,10 @@
           <el-input
             v-model="indicatorForm.metricsCode"
             placeholder="请选择或输入指标代码"
-            :readonly="mode === 'edit'"  
-            :disabled="mode === 'edit'" 
+             readonly  
           />
           <!-- Hide select button in edit mode -->
           <el-button
-            v-if="mode === 'add'"
             type="primary"
             style="margin-left: 10px;"
             @click="openMetricTreeSelect">
@@ -45,7 +52,7 @@
 
       <!-- 指标名称 -->
       <el-form-item label="指标名称" prop="metricName">
-        <el-input v-model="indicatorForm.metricName" placeholder="请输入指标名称" />
+        <el-input v-model="indicatorForm.metricName"   placeholder="请输入指标名称" />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -96,6 +103,7 @@ interface IndicatorItem {
    metricName: string;
    parentId?: number | null;
    categoryName?: string;
+   themeCode: string;
 }
 
 // --- State ---
@@ -103,10 +111,10 @@ const loading = ref(false);
 const indicatorFormRef = ref<FormInstance>();
 const themeSelectVisible = ref(false);
  const metricTreeSelectVisible = ref(false); 
-
+const selectedTheme = ref(null);
 // 表单数据
 const indicatorForm = reactive<IndicatorItem>({
-   id: null, categoryName: '', metricsCode: '', metricName: '', parentId: null,
+   id: null, categoryName: '', metricsCode: '', metricName: '', parentId: null,themeCode:'',
 });
 
 // Computed property
@@ -136,10 +144,16 @@ const resetFormOnClose = () => { resetForm(); };
 // Theme Selection
 const openThemeSelect = () => { themeSelectVisible.value = true; };
 const handleThemeSelected = (theme: any) => {
+  
    if (theme && theme.categoryName) {
      indicatorForm.categoryName = theme.categoryName;
      nextTick(() => indicatorFormRef.value?.validateField('categoryName'));
    }
+     // 设置行业代码
+    if (theme.themeCode) {
+      indicatorForm.themeCode = theme.themeCode;
+      nextTick(() => indicatorFormRef.value?.validateField('themeCode'));
+    }
    themeSelectVisible.value = false;
 };
 
@@ -150,7 +164,6 @@ const openMetricTreeSelect = () => {
 
 const handleMetricSelected = (metric: any) => {
   if (metric && metric.metricsCode) {
-    console.log('metric', metric);
     indicatorForm.metricsCode = metric.metricsCode;
     // 如果需要，也可以用选中的指标名称填充名称字段
     // indicatorForm.metricName = metric.metricName || '';

@@ -2,12 +2,15 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 // import { useTreeSelect } from '@/composables/useTreeSelect';
 import type { TreeNode } from '@/types/treeSelect';
-import { ElMessage, ElTree } from 'element-plus'; // Import ElTree
-import service from '@/utils/axios'; // Keep if fetching data here
-import { isAxiosError } from 'axios'; // Keep for error handling
-import { userToken } from '@/composables/useAuth'; // Keep if fetching data here
-import { fetchMockNodes } from '@/mock/treeMockApi'; // Keep for mock data
+import { ElMessage, ElTree } from 'element-plus';  
+import service from '@/utils/axios'; 
+import { isAxiosError } from 'axios';  
+import { userToken,getToken } from '@/composables/useAuth'; 
+import { fetchMockNodes } from '@/mock/treeMockApi'; 
 import {  isProduction, defaultParentCode } from '@/utils/env';
+
+import { commonApi } from '@/api/commonApi';
+
 
 // 定义props
 const props = defineProps<{
@@ -33,6 +36,20 @@ const defaultExpandedKeys = ref<string[]>([]);
 const treeDataMap = ref<Map<string, TreeNode>>(new Map());
 // State for single selection
 const selectedNode = ref<TreeNode | null>(null);
+
+// 页面级别的token状态
+const pageToken = ref('')
+
+
+// 获取最新token的方法
+const refreshToken = async () => {
+  try {
+    pageToken.value = await getToken()
+  } catch (error) {
+    console.error('刷新token失败:', error)
+    throw error
+  }
+}
 
 // Configure el-tree props mapping
 const treeProps = {
@@ -67,32 +84,25 @@ const handleDialogOpen = () => {
 };
 
 const loadNode = async (node: any, resolve: (data: TreeNode[]) => void) => {
-  console.log('loadNode',node);
   const parentCode = node.level === 0 ? defaultParentCode : node.data?.indicatorCode;
   try {
      let children: TreeNode[] = [];
- 
  // 判断是否为生产环境
     if (isProduction) {
       // 生产环境：调用真实 API
-      console.log('生产环境: 使用真实 API 获取树节点');
-      const response = await service.post(
-        'https://iadev.cmfchina.com/dw/edbapply/v2/indicatorSearch/queryClickTreeList',
-        {
-          indicatorCode: parentCode || "",
-          indicatorKeyName: "",
-          indicatorName: "",
-          noteCategory: "",
-          queryType: 0
-        },
-        {
-          headers: { 'Authentication': userToken.value }
-        }
-      );
-      console.log('response.data',response.data);
+      await refreshToken();
+       const response = await commonApi.queryClickTreeList(
+          {
+            indicatorCode: parentCode, // 使用每个指标的metricsCode
+            indicatorKeyName: "",  // 根据实际需求调整这些参数
+            indicatorName: "",
+            noteCategory: "",
+            queryType: 0
+          },
+          pageToken.value
+        );
       if (response.data && response.data.success && Array.isArray(response.data.data)) {
         children = response.data.data;
-        console.log('获取到树节点数据:', children.length);
       } else {
         console.warn('API 响应格式异常:', response.data);
       }
@@ -102,7 +112,10 @@ const loadNode = async (node: any, resolve: (data: TreeNode[]) => void) => {
       children = await fetchMockNodes(parentCode);
     }
     children.forEach(n => { if (n.nodeId) treeDataMap.value.set(n.nodeId, n); });
-    resolve(children);
+      // 过滤 hasChildren =0节点
+      const filteredChildren = children.filter(node => node.hasChildren !== 0);
+     filteredChildren.forEach(n => { if (n.nodeId) treeDataMap.value.set(n.nodeId, n); });
+    resolve(filteredChildren);
     //  if(node.level === 0 && props.initialSelectedId){
     //       nextTick(()=> highlightInitialNode());
     //  }
@@ -148,7 +161,18 @@ const handleNodeExpand = (data: TreeNode) => {
 };
 const handleNodeCollapse = (data: TreeNode) => {
    if (data.nodeId) {
-       defaultExpandedKeys.value = defaultExpandedKeys.value.filter(id => id !== data.nodeId);
+       console.log('节点折叠:', data.indicatorName, data.nodeId);
+       // 创建新数组而不是修改原数组
+       defaultExpandedKeys.value = [...defaultExpandedKeys.value.filter(id => id !== data.nodeId)];
+       
+       // 使用 nextTick 确保视图更新
+       nextTick(() => {
+         console.log('折叠后的展开节点:', defaultExpandedKeys.value);
+         // 可以尝试手动调用树的方法
+         if (treeRef.value) {
+           treeRef.value.store.nodesMap[data.nodeId]?.collapse();
+         }
+       });
    }
 };
 
@@ -159,8 +183,9 @@ const handleConfirm = () => {
        ElMessage.warning('请选择一个节点');
        return;
    }
-   if(nodeToConfirm.hasChildren!==0){
-    ElMessage.warning('请选择一个末级节点');
+   console.log('nodeToConfirm',nodeToConfirm);
+   if(nodeToConfirm.isEndCatalog!==1){
+    ElMessage.warning('请选择一个末级目录');
     return;
    }
   emit('confirm', nodeToConfirm); // Emit the single selected node
@@ -258,4 +283,4 @@ const handleClose = () => {
    /* Remove styles specifically for checkboxes if they existed */
 }
 
-</style>
+</style>        

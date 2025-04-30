@@ -1,4 +1,3 @@
-<!-- src/views/IndicatorComponents/MetricSelectDialog.vue -->
 <template>
   <el-dialog
     title="选择指标"

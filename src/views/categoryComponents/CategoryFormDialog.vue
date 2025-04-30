@@ -129,7 +129,6 @@ const rules = reactive<FormRules>({
   description: [
     { max: 200, message: '长度不能超过 200 个字符', trigger: 'blur' },
   ],
-  // 添加其他必要的规则
 });
 
 // --- Methods ---
@@ -151,8 +150,13 @@ const resetForm = () => {
     createdBy: 'admin',
     updatedBy: 'admin',
   });
-  initialIndustryCodes.value = '';
+   initialIndustryCodes.value = '';
 };
+
+const fullResetForm = () => {
+  resetForm();
+  initialIndustryCodes.value = ''; // 只在需要完全重置时才清空初始选择
+}
 
 // --- Watcher --- (监听外部传入的数据变化，填充表单)
 watch(() => props.categoryData, (newData) => {
@@ -166,14 +170,15 @@ watch(() => props.categoryData, (newData) => {
     initialIndustryCodes.value = newData.themeCode || ''; // 设置初始行业代码
      // 编辑模式下清除验证状态，避免残留错误
     categoryFormRef.value?.clearValidate();
-  } else {
-    resetForm(); // 如果是新增模式或清空数据，则重置表单
+  } else if (props.mode === 'add') {
+    fullResetForm(); // 如果是新增模式，则完全重置表单
   }
 }, { immediate: true, deep: true });
 
 // 处理行业选择确认
 const handleIndustryConfirm = (selectedCodes: string) => {
   categoryForm.themeCode = selectedCodes;
+   initialIndustryCodes.value = selectedCodes; // 添加这行，保存选择到初始值
   // 手动触发验证
   categoryFormRef.value?.validateField('themeCode');
 };
@@ -181,16 +186,12 @@ const handleIndustryConfirm = (selectedCodes: string) => {
 // 提交表单
 const submitCategoryForm = async () => {
   if (!categoryFormRef.value) return;
-
   await categoryFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true;
       try {
         const dataToSubmit = { ...categoryForm };
         // 可以在这里移除不需要提交的字段，例如 createdBy, updatedBy （如果后端处理）
-        // delete dataToSubmit.createdBy;
-        // delete dataToSubmit.updatedBy;
-
         if (props.mode === 'add') {
           await service.post('/dataPortal/categories', dataToSubmit, {
             headers: { 'Authentication': userToken.value }

@@ -4,6 +4,8 @@ import axios, { InternalAxiosRequestConfig } from 'axios'
 // 获取环境变量
 const apiBaseUrl = process.env.NODE_ENV === 'production' ? 'https://iadev.cmfchina.com' : '/'
 
+// const apiBaseUrl = process.env.NODE_ENV === 'production' ? 'https://ia.cmfchina.com' : '/'
+
 const service = axios.create({
   baseURL: apiBaseUrl,  // 使用相对路径，让代理处理
   timeout: 10000,

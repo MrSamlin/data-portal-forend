@@ -1,15 +1,15 @@
 const { defineConfig } = require('@vue/cli-service');
 const path = require('path');
 const axios = require('axios');
-import { isDevelopment } from '@/utils/env';
+const { isDevelopment,isProduction } = require('./src/utils/env.js');
 // 获取当前环境
 const env = isDevelopment ? 'development' : 'production';
 
 // 不同环境的API基础URL
 const API_BASE_URL = {
-  development: 'http://localhost:7070',
-  test: 'http://192.168.126.242:7070',
-  production: 'http://192.168.126.242:7070'
+  development: 'http://localhost:8311',
+  test: 'http://192.168.126.242:8311',
+  production: 'http://192.168.126.242:8311'
 };
  
 // 指标看板API地址
@@ -61,7 +61,7 @@ const createProxy = () => {
 };
 
 module.exports = defineConfig({
-  publicPath:  process.env.NODE_ENV==='production'?'./':'/',
+  publicPath: isProduction?'./':'/',
   outputDir: 'dist',
   indexPath: 'index.html',
   assetsDir: 'static',

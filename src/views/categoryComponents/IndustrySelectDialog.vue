@@ -1,4 +1,3 @@
-<!-- src/views/categoryComponents/IndustrySelectDialog.vue -->
 <template>
   <el-dialog
     title="选择行业"
@@ -36,6 +35,7 @@
       <el-table-column prop="title" label="行业名称" />
       <el-table-column prop="value" label="行业代码" />
     </el-table>
+
 
     <div class="pagination-container">
       <el-pagination
@@ -88,10 +88,11 @@ const industryPage = ref(1);
 const industryTableRef = ref<InstanceType<typeof ElTable>>();
 // 使用 Set 存储所有选中的行业代码 (跨分页)
 const selectedCodesSet = ref(new Set<string>());
-
+     
+// 添加标志位
+const isRestoringSelection = ref(false);
 // --- Methods ---
 const handleDialogOpen = async () => {
-  console.log('Industry select dialog opened. Initial codes:', props.initialSelectionCodes);
   // 1. 初始化 selectedCodesSet
   selectedCodesSet.value.clear();
   if (props.initialSelectionCodes) {
@@ -99,7 +100,6 @@ const handleDialogOpen = async () => {
       if (code) selectedCodesSet.value.add(code);
     });
   }
-  console.log('Initial selectedCodesSet:', selectedCodesSet.value);
   // 2. 重置搜索和分页，清空列表
   industryPage.value = 1;
   industrySearchKeyword.value = '';
@@ -129,11 +129,14 @@ const searchIndustries = async () => {
       // 确保 DOM 更新
       await nextTick();
 
+
       // 3. 同步当前页的视觉勾选状态
       // 使用 setTimeout 稍微延迟，确保表格渲染完成
       setTimeout(() => {
         if (industryTableRef.value && industryList.value.length > 0) {
-          console.log('Applying visual selection based on set:', selectedCodesSet.value);
+
+              // 设置标志位，开始恢复选择
+            isRestoringSelection.value = true;
           industryList.value.forEach(row => {
             const shouldBeSelected = selectedCodesSet.value.has(row.value);
             try {
@@ -144,7 +147,8 @@ const searchIndustries = async () => {
               console.error("Error toggling row selection during visual sync:", e, row);
             }
           });
-          console.log('Finished applying visual selection for current page.');
+            // 恢复选择完成
+           isRestoringSelection.value = false;
         } else {
           console.log('Table ref not available or industry list empty during visual sync.');
         }
@@ -173,17 +177,25 @@ const handleIndustryPageChange = (newPage: number) => {
   searchIndustries(); // 搜索新页并同步视觉勾选
 };
 
-// 4. 更新 selectedCodesSet (单一数据源)
 // selection-change 在 reserve-selection 模式下会返回所有选中的行
 const handleIndustrySelectionChange = (selection: any[]) => {
   console.log('Table selection changed (total selection):', selection.map(r => r.value));
-  // 完全根据 selection 更新 Set
-  selectedCodesSet.value.clear();
+  // 如果是正在恢复选择状态，则完全忽略此事件
+  if (isRestoringSelection.value) {
+    return;
+  }
+  // 先获取当前页面所有行的值
+  const currentPageValues = new Set(industryList.value.map(row => row.value));
+  
+  // 从 selectedCodesSet 中移除当前页面的所有行
+  currentPageValues.forEach(value => {
+    selectedCodesSet.value.delete(value);
+  });
+  
+  // 然后添加当前页面中被选中的行
   selection.forEach(row => {
-    if (row && row.value) { // 添加检查确保 row 和 row.value 存在
-        selectedCodesSet.value.add(row.value);
-    } else {
-        console.warn("Received invalid row in selection change:", row);
+    if (row && row.value) {
+      selectedCodesSet.value.add(row.value);
     }
   });
   console.log('Updated selectedCodesSet:', selectedCodesSet.value);
@@ -192,7 +204,6 @@ const handleIndustrySelectionChange = (selection: any[]) => {
 // 5. 确认时使用 Set
 const confirmIndustrySelection = () => {
   const codesArray = Array.from(selectedCodesSet.value);
-  console.log('Confirming selection from Set:', codesArray);
   if (codesArray.length === 0) {
     ElMessage.warning('请至少选择一个行业');
     return;

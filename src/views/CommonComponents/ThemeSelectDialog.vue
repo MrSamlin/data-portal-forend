@@ -113,13 +113,39 @@ const currentSelectedTheme = ref<any>(null);
 const themeTableRef = ref<InstanceType<typeof ElTable>>();
 
 // --- Methods ---
-
 const handleDialogOpen = () => {
-    // Reset state when dialog opens
+    // 重置搜索和分页状态，但保留之前的选择
     themeSearchKeyword.value = '';
     themePage.value = 1;
-    currentSelectedTheme.value = null;
-    fetchThemesForSelect(); // Fetch initial list
+    
+    // 不要立即重置选择
+    // currentSelectedTheme.value = null; // 删除这行
+    
+    // 先获取数据
+    fetchThemesForSelect().then(() => {
+        // 如果有初始选择值，尝试恢复选择
+        if (props.initialThemeName && themeList.value.length > 0) {
+            const targetTheme = themeList.value.find(theme => 
+                theme.categoryName === props.initialThemeName
+            );
+            
+            if (targetTheme) {
+                // 设置当前选中项
+                nextTick(() => {
+                    currentSelectedTheme.value = targetTheme;
+                    if (themeTableRef.value) {
+                        themeTableRef.value.setCurrentRow(targetTheme);
+                    }
+                });
+            } else {
+                // 如果当前页面没有找到初始选择项，则重置选择
+                currentSelectedTheme.value = null;
+            }
+        } else if (!props.initialThemeName) {
+            // 如果没有初始值，则重置选择
+            currentSelectedTheme.value = null;
+        }
+    });
 }
 
 const searchThemesInDialog = () => {

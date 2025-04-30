@@ -27,6 +27,7 @@
       <el-table :data="categoryList" style="width: 100%" v-loading="loading">
         <el-table-column prop="categoryId" label="ID" width="80" />
         <el-table-column prop="categoryName" label="主题名称" />
+         <el-table-column prop="themeCode" label="行业" />
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
         <el-table-column prop="displayOrder" label="排序" width="80" />
         <el-table-column label="图标/颜色" width="100">

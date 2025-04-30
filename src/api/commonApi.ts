@@ -8,8 +8,15 @@ const API_PREFIX_DW = '/dw/edbapply/v2';
 
 export const searchApiUrl =   'https://iadev.cmfchina.com/IA/polymerize/search.html';
 
+// export const searchApiUrl =   'https://ia.cmfchina.com/IA/polymerize/search.html';
+
 export const dashCardUrl =  'http://192.168.126.158:8188/web-main/#/dataCardDetail';
-// ?token=6cfd77f6-de98-4f57-ace7-7b84a7ecf0371&type=get&id=2c17a80664e24cbdaa0f9f95515b17c5 
+// ?token=6cfd77f6-de98-4f57-ace7-7b84a7ecf0371&type=get&id=2c17a80664e24cbdaa0f9f95515b17c5   数据来源:主题下的行业(多个，并且不同主题可同个行业) 
+
+
+export const getIndicatorUrl = (token: string, indicatorCode: string) => {
+  return `https://jstest.cmfchina.com/web-main/#/dataChartDetail?token=${token}&hideMenu=true&layout=false&type=getChart&codes=${indicatorCode}`;
+};
 
 // 分类相关API
 export const commonApi = {
@@ -105,11 +112,7 @@ export const commonApi = {
       size: 4, // 固定 size 为 5
       categoryName: categoryName // 使用传入的 categoryName
     };
-
-    // API 端点路径
-    // 确认这个路径是否需要像 '/dataPortal' 那样有特定的前缀
-    // 或者它本身就是相对于 Axios 基础 URL 的完整路径
-    const apiUrl = `${DATA_PORTAL_PREFIX}/industryMapper/fetchIndustryDataByIndustry`;
+    const apiUrl = `${DATA_PORTAL_PREFIX}/indicatorSearch/fetchIndustryDataByIndustry`;
 
     // 发起 POST 请求
     return service.post(apiUrl, payload, {
@@ -124,7 +127,3 @@ export const commonApi = {
 
 
 };
-
- 
- 
- 

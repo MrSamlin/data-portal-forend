@@ -1,26 +1,27 @@
 // src/mockData/treeMockApi.ts
 import type { TreeNode } from '@/types/treeSelect'; // 确认路径
 
+
 // --- 模拟的顶层节点数据 ---
 const topLevelNodes: TreeNode[] = [
-  { indicatorName: "汽车", nodeId: "727167761438240777", hasChildren: 1, indicatorCode: "AUTO", parentCode: null, levelCode: "1", orderNum: 1 },
-  { indicatorName: "宏观经济", nodeId: "MACRO_ECONOMY", hasChildren: 1, indicatorCode: "MACRO", parentCode: null, levelCode: "1", orderNum: 2 },
-  { indicatorName: "地产", nodeId: "REAL_ESTATE", hasChildren: 1, indicatorCode: "RE", parentCode: null, levelCode: "1", orderNum: 3 },
-  { indicatorName: "策略", nodeId: "STRATEGY", hasChildren: 0, indicatorCode: "STRAT", parentCode: null, levelCode: "1", orderNum: 4, isEndCatalog: 1 },
+  { indicatorName: "汽车", nodeId: "727167761438240777", hasChildren: 1, indicatorCode: "AUTO", parentCode: "727167761399846748", levelCode: "1", orderNum: 1 },
+  { indicatorName: "宏观经济", nodeId: "MACRO_ECONOMY", hasChildren: 1, indicatorCode: "MACRO", parentCode: "727167761399846748", levelCode: "1", orderNum: 2 },
+  { indicatorName: "地产", nodeId: "REAL_ESTATE", hasChildren: 1, indicatorCode: "RE", parentCode: "727167761399846748", levelCode: "1", orderNum: 3 },
+  { indicatorName: "策略", nodeId: "STRATEGY", hasChildren: 0, indicatorCode: "STRAT", parentCode: "727167761399846748", levelCode: "1", orderNum: 4, isEndCatalog: 1 },
   // 可以添加更多顶层节点
 ];
 
 // --- 模拟的“汽车”子节点数据 ---
 const autoChildren: TreeNode[] = [
-  { indicatorName: "产品产量和消费量", nodeId: "72716776262349839", hasChildren: 1, indicatorCode: "AUTO_PROD_CONS", parentCode: "AUTO", levelCode: "2", orderNum: 579 },
-  { indicatorName: "产品产量和销售量", nodeId: "72716776152048474", hasChildren: 1, indicatorCode: "AUTO_PROD_SALE", parentCode: "AUTO", levelCode: "2", orderNum: 581 },
+  { indicatorName: "产品产量和消费量", nodeId: "72716776262349839", hasChildren: 1, indicatorCode: "AUTO_PROD_CONS", parentCode: "AUTO", levelCode: "2", orderNum: 579 ,isEndCatalog:1},
+  { indicatorName: "产品产量和销售量", nodeId: "72716776152048474", hasChildren: 1, indicatorCode: "AUTO_PROD_SALE", parentCode: "AUTO", levelCode: "2", orderNum: 581 ,isEndCatalog:1},
   { indicatorName: "产品进出口", nodeId: "727167761143609270", hasChildren: 0, indicatorCode: "AUTO_IMPORT_EXPORT", parentCode: "AUTO", levelCode: "2", orderNum: 583, isEndCatalog: 1 },
   { indicatorName: "产品销量和销售量", nodeId: "727167761125068575", hasChildren: 0, indicatorCode: "AUTO_SALE_VOL", parentCode: "AUTO", levelCode: "2", orderNum: 586, isEndCatalog: 1 },
 ];
 
 // --- 模拟的“宏观经济”子节点数据 ---
 const macroChildren: TreeNode[] = [
-    { indicatorName: "GDP", nodeId: "MACRO_GDP", hasChildren: 1, indicatorCode: "GDP", parentCode: "MACRO", levelCode: "2", orderNum: 1 },
+    { indicatorName: "GDP", nodeId: "MACRO_GDP", hasChildren: 1, indicatorCode: "GDP", parentCode: "MACRO", levelCode: "2", orderNum: 1 ,isEndCatalog:1},
     { indicatorName: "CPI", nodeId: "MACRO_CPI", hasChildren: 0, indicatorCode: "CPI", parentCode: "MACRO", levelCode: "2", orderNum: 2, isEndCatalog: 1 },
     { indicatorName: "PMI", nodeId: "MACRO_PMI", hasChildren: 0, indicatorCode: "PMI", parentCode: "MACRO", levelCode: "2", orderNum: 3, isEndCatalog: 1 },
 ];
@@ -60,7 +61,7 @@ export const fetchMockNodes = (parentCode: string | null): Promise<TreeNode[]> =
   return new Promise((resolve) => {
     setTimeout(() => {
       let children: TreeNode[] = [];
-      if (parentCode === null) {
+      if (parentCode === '727167761399846748') {
         children = topLevelNodes;
       } else if (parentCode === "AUTO") { // "汽车" 的 indicatorCode
         children = autoChildren;
@@ -90,4 +91,47 @@ export const fetchMockNodes = (parentCode: string | null): Promise<TreeNode[]> =
       resolve(processedChildren);
     }, 500); // 模拟 500ms 延迟
   });
+};
+
+
+// --- 添加并导出 generateMockIndicatorData 函数 ---
+/**
+ * 生成模拟的指标详细数据
+ * @param metricsCode 指标代码
+ * @param metricName 指标名称
+ * @returns 模拟的表格数据数组
+ */
+export const generateMockIndicatorData = (metricsCode: string, metricName: string) => {
+  // 根据不同的指标代码生成不同的模拟数据集
+  const count = Math.floor(Math.random() * 5) + 2; // 随机生成2-6条数据
+  const mockData = [];
+
+  for (let i = 0; i < count; i++) {
+    let indicatorName, source, updateTime;
+
+    // 根据指标类型生成有意义的示例数据
+    if (metricName.includes('测试')) {
+      indicatorName = `测试指标 ${i+1}`;
+      source = "测试数据中心";
+      updateTime = "2023-11-01";
+    } else if (metricsCode.includes('321')) {
+      indicatorName = `${metricName} 数据项 ${i+1}`;
+      source = "行业数据库";
+      updateTime = "2023-12-15";
+    } else {
+      indicatorName = `${metricName} - 子指标 ${i+1}`;
+      source = "国家统计局";
+      updateTime = "2024-01-20";
+    }
+
+    mockData.push({
+      key: `${metricsCode}_${i}`,
+      title: indicatorName,
+      dataSource: source,
+      updateTime: updateTime,
+      jumpUrl: `#/indicator/${metricsCode}_${i}` // 模拟跳转链接
+    });
+  }
+
+  return mockData;
 };
