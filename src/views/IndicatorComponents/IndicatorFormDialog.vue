@@ -49,10 +49,21 @@
           </el-button>
         </div>
       </el-form-item>
+       <el-form-item label="指标类型" prop="metricType">
+        <el-input v-model="indicatorForm.metricType"   placeholder="请输入指标类型" />
+      </el-form-item>
+      <!-- 指标 -->
+      <el-form-item label="指标" prop="metricName">
+        <el-input v-model="indicatorForm.metricName"   placeholder="请输入指标" />
+      </el-form-item>
+   
 
-      <!-- 指标名称 -->
-      <el-form-item label="指标名称" prop="metricName">
-        <el-input v-model="indicatorForm.metricName"   placeholder="请输入指标名称" />
+          <el-form-item label="可见" prop="isVisible">
+        <el-switch v-model="indicatorForm.isVisible" :active-value="1" :inactive-value="0" />
+      </el-form-item>
+
+          <el-form-item label="重要性" prop="tag">
+        <el-switch v-model="indicatorForm.tag" :active-value="1" :inactive-value="0" />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -76,6 +87,8 @@
       title="选择指标代码 (树状)"
       @confirm="handleMetricTreeConfirm" 
     />
+
+      
   </el-dialog>
 </template>
 
@@ -104,6 +117,10 @@ interface IndicatorItem {
    parentId?: number | null;
    categoryName?: string;
    themeCode: string;
+   isVisible:'';
+    sourceCode?: string;  
+   metricType?: string; 
+   indicatorCode?: string;
 }
 
 // --- State ---
@@ -115,7 +132,9 @@ const selectedTheme = ref(null);
 // 表单数据
 const indicatorForm = reactive<IndicatorItem>({
    id: null, categoryName: '', metricsCode: '', metricName: '', parentId: null,themeCode:'',
+   isVisible:'0',sourceCode:'',metricType:'',tag:'1',dataSource:'',indicatorCode:''
 });
+ 
 
 // Computed property
 const selectedThemeNameDisplay = computed(() => indicatorForm.categoryName || '');
@@ -128,15 +147,23 @@ const rules = reactive<FormRules>({
     { required: true, message: '请选择或输入指标代码', trigger: ['change', 'blur'] },
     { max: 500, message: '长度不能超过 500 个字符', trigger: ['change', 'blur'] }
   ],
-  metricName: [
-    { required: true, message: '请输入指标名称', trigger: 'blur' },
+  metricType: [
+    { required: true, message: '请输入指标类型', trigger: 'blur' },
     { max: 200, message: '长度不能超过 200 个字符', trigger: 'blur' }
-  ]
+  ],
+  metricName: [
+    { required: true, message: '请输入指标', trigger: 'blur' },
+    { max: 200, message: '长度不能超过 200 个字符', trigger: 'blur' }
+  ],
+    isVisible: [{ required: true, message: '请选择状态', trigger: 'change' }],
+    tag: [{ required: true, message: '请选择重要性', trigger: 'change' }],
 });
 
 // --- Methods ---
 const resetForm = () => {
-   Object.assign(indicatorForm, { id: null, categoryName: '', metricsCode: '', metricName: '', parentId: null, });
+   Object.assign(indicatorForm, { id: null, categoryName: '',themeCode:'', 
+   metricsCode: '',metricType:'', metricName: '', parentId: null,tag:1,isVisible:'0',sourceCode:''
+   , dataSource:'',indicatorCode:'' });
    nextTick(() => indicatorFormRef.value?.clearValidate());
 };
 const resetFormOnClose = () => { resetForm(); };
@@ -165,18 +192,19 @@ const openMetricTreeSelect = () => {
 const handleMetricSelected = (metric: any) => {
   if (metric && metric.metricsCode) {
     indicatorForm.metricsCode = metric.metricsCode;
-    // 如果需要，也可以用选中的指标名称填充名称字段
+    // 如果需要，也可以用选中的指标填充名称字段
     // indicatorForm.metricName = metric.metricName || '';
     nextTick(() => {
         indicatorFormRef.value?.validateField('metricsCode');
-         indicatorFormRef.value?.validateField('metricName');   
+       //  indicatorFormRef.value?.validateField('metricName');   
         // if (indicatorForm.metricName) {
         //     indicatorFormRef.value?.validateField('metricName');
         // }
     });
   }
-  metricSelectVisible.value = false; // 关闭对话框
+//  metricSelectVisible.value = false; // 关闭对话框
 };
+
 // --- END NEW ---
 
 // Submit Form
@@ -187,13 +215,14 @@ const submitIndicatorForm = async () => {
        loading.value = true;
        try {
          const dataToSubmit = { ...indicatorForm };
+         console.log('dataToSubmit:',dataToSubmit);
          if (props.mode === 'add') {
            const { id, ...addData } = dataToSubmit;
-           await service.post('/dataPortal/metrics', addData, { headers: { 'Authentication': userToken.value } });
+           await service.post('/cmfwxrobot/metrics', addData, { headers: { 'Authentication': userToken.value } });
            ElMessage.success('新增成功');
          } else {
            if (dataToSubmit.id === null) throw new Error("ID missing for update");
-           await service.put('/dataPortal/metrics', dataToSubmit, { headers: { 'Authentication': userToken.value } });
+           await service.put('/cmfwxrobot/metrics', dataToSubmit, { headers: { 'Authentication': userToken.value } });
            ElMessage.success('更新成功');
          }
          emit('submitted');
@@ -207,33 +236,73 @@ const submitIndicatorForm = async () => {
 };
 
 
+// 调用API获取指标类型
+const fetchIndicatorType = async (indicatorCode: string) => {
+  if (!indicatorCode) return null;
+  try {
+    // 注意：在生产环境中，localhost 需要替换为实际API地址
+    const apiUrl = `/cmfwxrobot/indicatorSearch/fetchIndicatorTypeByCode`
+      
+    const response = await service.post(apiUrl, 
+      { indicatorCode },
+      // 如果API需要token，请添加headers
+      // { headers: { 'Authentication': userToken.value } } 
+    );
+    if (response.data && response.data.indicatorType) {
+      return response.data;
+    } else {
+      console.warn("API did not return indicatorType for code:", indicatorCode, response.data);
+      ElMessage.warning('未能获取指标类型，请手动输入或检查数据。');
+      return null;
+    }
+  } catch (error) {
+    console.error('获取指标类型失败:', error);
+    ElMessage.error('获取指标类型失败，请稍后重试或手动输入。');
+    if (isAxiosError(error)) {
+      console.error('Axios error details:', error.response?.data);
+    }
+    return null;
+  }
+};
 
-    const handleMetricTreeConfirm = (selectedNode: TreeNode) => { // 直接接收单个节点对象
+
+
+    const handleMetricTreeConfirm = async (selectedNode: TreeNode) => {
+          indicatorForm.indicatorCode = selectedNode.indicatorCode;
           if (selectedNode) {
-            // 从接收到的节点对象中提取 indicatorCode 并赋值
-            if (selectedNode.indicatorCode) {
-              indicatorForm.metricsCode = selectedNode.indicatorCode;
-            } else {
-              console.warn("Selected tree node missing indicatorCode:", selectedNode);
+            let originalMetricsCode = '';
+            let originalMetricName = ''; 
+            if (!selectedNode.indicatorCode) {
+              console.warn("Selected tree node missing sourceCode:", selectedNode);
             }
-
-            // 从接收到的节点对象中提取 indicatorName 并赋值
             if (selectedNode.indicatorName) {
-              indicatorForm.metricName = selectedNode.indicatorName;
+              originalMetricName = selectedNode.indicatorName; 
+              originalMetricsCode = selectedNode.indicatorCode;
             } else {
               console.warn("Selected tree node missing indicatorName:", selectedNode);
             }
-
-            // 触发验证
-            nextTick(() => {
-              indicatorFormRef.value?.validateField('metricsCode');
-              indicatorFormRef.value?.validateField('metricName');
-            });
+            loading.value = true; // 开始加载状态
+            const fetchedIndicatorType = await fetchIndicatorType( selectedNode.sourceCode);
+            loading.value = false; // 结束加载状态
+            if (fetchedIndicatorType !== null) {
+              indicatorForm.metricName = fetchedIndicatorType.indicatorName;
+              indicatorForm.metricsCode = fetchedIndicatorType.indicatorCode;
+              indicatorForm.metricType = fetchedIndicatorType.indicatorType;
+              indicatorForm.dataSource = fetchedIndicatorType.dataSource;
+            } else {
+               ElMessage.warning('指标类型获取失败，已填入节点名称，请检查或手动修改。');
+               indicatorForm.metricName = originalMetricName;  
+                indicatorForm.metricsCode = originalMetricsCode;
+                indicatorForm.metricType = '';
+                indicatorForm.dataSource = '';
+            }
+           
           } else {
               console.warn("Tree selection confirmed without a node.");
           }
           metricTreeSelectVisible.value = false; // 关闭对话框
         };
+
 
 const closeDialog = () => { emit('update:visible', false); };
 

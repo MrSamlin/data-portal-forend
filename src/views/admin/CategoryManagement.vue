@@ -30,15 +30,33 @@
          <el-table-column prop="themeCode" label="行业" />
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
         <el-table-column prop="displayOrder" label="排序" width="80" />
-        <el-table-column label="图标/颜色" width="100">
+
+
+          <el-table-column label="底图" min-width="80">
           <template #default="scope">
-            <div v-if="scope.row.icon && isColor(scope.row.icon)" 
-                 :style="{ backgroundColor: scope.row.icon, width: '30px', height: '30px', borderRadius: '4px' }"
-                 class="color-display-block"></div>
-            <span v-else-if="scope.row.icon">{{ scope.row.icon }}</span>
-            <span v-else>无</span>
+            <img 
+              v-if="scope.row.icon" 
+              :src="`/icon/${scope.row.icon}`" 
+              alt="底图" 
+              style="width: 50px; height: 50px; object-fit: contain;" 
+            />
+            <span v-else>无底图</span>
           </template>
-        </el-table-column>
+     </el-table-column>
+
+     <el-table-column label="图标" min-width="80">
+          <template #default="scope">
+            <img 
+              v-if="scope.row.bannerImage" 
+              :src="`/img/${scope.row.bannerImage}`" 
+              alt="图标" 
+              style="width: 50px; height: 50px; object-fit: contain;" 
+            />
+            <span v-else>无图标</span>
+          </template>
+     </el-table-column>
+
+  
         <el-table-column prop="isVisible" label="是否可见" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.isVisible === 1 ? 'success' : 'info'">
@@ -46,6 +64,7 @@
             </el-tag>
           </template>
         </el-table-column>
+        
         <el-table-column label="操作" width="200">
           <template #default="scope">
             <el-button type="primary" size="small" @click="handleEditCategory(scope.row)">编辑</el-button>
@@ -132,12 +151,12 @@ const fetchTopCategories = async () => {
   loading.value = true
   const apiCurrentPage = page.value - 1
   try {   
-    const response = await service.post('/dataPortal/categories/list', {
+    const response = await service.post('/cmfwxrobot/categories/list', {
       page: page.value,
       size: pageSize.value,
       currentPage: apiCurrentPage,
       categoryName: searchKeyword.value.trim()
-    },{  // 保持 /dataPortal 前缀
+    },{  // 保持 /cmfwxrobot 前缀
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -195,7 +214,7 @@ const handleDeleteCategory = (row: any) => {
     }
   ).then(async () => {
     try {
-      await service.delete(`/dataPortal/categories/${row.categoryId}`,{  // 保持 /dataPortal 前缀
+      await service.delete(`/cmfwxrobot/categories/${row.categoryId}`,{  // 保持 /cmfwxrobot 前缀
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',

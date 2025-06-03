@@ -7,7 +7,7 @@ import service from '@/utils/axios';
 import { isAxiosError } from 'axios';  
 import { userToken,getToken } from '@/composables/useAuth'; 
 import { fetchMockNodes } from '@/mock/treeMockApi'; 
-import {  isProduction, defaultParentCode } from '@/utils/env';
+import {  isProduction, defaultParentCode,isDevelopment } from '@/utils/env';
 
 import { commonApi } from '@/api/commonApi';
 
@@ -73,13 +73,11 @@ const filterNode = (value: string, data: TreeNode): boolean => {
 
 // Reset state when dialog opens
 const handleDialogOpen = () => {
+   defaultExpandedKeys.value = []; 
   filterText.value = '';
-  selectedNode.value = null; // Clear previous selection
-  // If using mock data, root is loaded by el-tree's lazy load automatically
-  // If initialSelectedId is provided, we might try to find and highlight it after load
+  selectedNode.value = null;  
   if (props.initialSelectedId) {
-      // Need logic here to expand and highlight after initial load if needed
-      // Maybe set defaultExpandedKeys based on ancestor path of initialSelectedId?
+      
   }
 };
 
@@ -88,7 +86,7 @@ const loadNode = async (node: any, resolve: (data: TreeNode[]) => void) => {
   try {
      let children: TreeNode[] = [];
  // 判断是否为生产环境
-    if (isProduction) {
+    if (!isDevelopment) {
       // 生产环境：调用真实 API
       await refreshToken();
        const response = await commonApi.queryClickTreeList(
@@ -113,9 +111,9 @@ const loadNode = async (node: any, resolve: (data: TreeNode[]) => void) => {
     }
     children.forEach(n => { if (n.nodeId) treeDataMap.value.set(n.nodeId, n); });
       // 过滤 hasChildren =0节点
-      const filteredChildren = children.filter(node => node.hasChildren !== 0);
-     filteredChildren.forEach(n => { if (n.nodeId) treeDataMap.value.set(n.nodeId, n); });
-    resolve(filteredChildren);
+      // const filteredChildren = children.filter(node => node.hasChildren !== 0);
+   //   filteredChildren.forEach(n => { if (n.nodeId) treeDataMap.value.set(n.nodeId, n); });
+    resolve(children);
     //  if(node.level === 0 && props.initialSelectedId){
     //       nextTick(()=> highlightInitialNode());
     //  }
@@ -161,7 +159,6 @@ const handleNodeExpand = (data: TreeNode) => {
 };
 const handleNodeCollapse = (data: TreeNode) => {
    if (data.nodeId) {
-       console.log('节点折叠:', data.indicatorName, data.nodeId);
        // 创建新数组而不是修改原数组
        defaultExpandedKeys.value = [...defaultExpandedKeys.value.filter(id => id !== data.nodeId)];
        
@@ -183,15 +180,13 @@ const handleConfirm = () => {
        ElMessage.warning('请选择一个节点');
        return;
    }
-   console.log('nodeToConfirm',nodeToConfirm);
-   if(nodeToConfirm.isEndCatalog!==1){
-    ElMessage.warning('请选择一个末级目录');
+   if(nodeToConfirm.hasChildren!==0){
+    ElMessage.warning('请选择一个末级文件');
     return;
    }
   emit('confirm', nodeToConfirm); // Emit the single selected node
   handleClose();
 };
-
 // Close dialog
 const handleClose = () => {
   emit('update:visible', false);

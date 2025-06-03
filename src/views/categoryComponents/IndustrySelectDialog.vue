@@ -113,7 +113,7 @@ const searchIndustries = async () => {
   const apiCurrentPage = (industryPage.value - 1) * industryPageSize.value;
 
   try {
-    const response = await service.post('/dataPortal/industryMapper/list', {
+    const response = await service.post('/cmfwxrobot/industryMapper/list', {
       page: industryPage.value,
       size: industryPageSize.value,
       currentPage: apiCurrentPage,

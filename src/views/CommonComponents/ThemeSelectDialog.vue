@@ -222,7 +222,7 @@ const findCurrentTheme = async () => {
 const fetchThemesForSelect = async () => {
   themeLoading.value = true;
   try {
-    const response = await service.post('/dataPortal/categories/list', {
+    const response = await service.post('/cmfwxrobot/categories/list', {
       page: themePage.value,
       size: themePageSize.value,
       currentPage: (themePage.value - 1) * themePageSize.value, // Adjust if API expects 0-based

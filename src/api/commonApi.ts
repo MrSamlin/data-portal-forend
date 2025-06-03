@@ -1,22 +1,14 @@
-import service from '@/utils/axios'
-import type { DeepAnalysisItem, MetricsItem } from '@/types/index'; // 确保类型已定义
-
-// API路径前缀
-const DATA_PORTAL_PREFIX = '/dataPortal';
+import service from '@/utils/axios';
+import type { DeepAnalysisItem, MetricsItem,PlatformMenuItem,PaginatedDeepAnalysisResult,DeepAnalysisQueryPayload } from '@/types/index'; // 确保类型已定义
 
 const API_PREFIX_DW = '/dw/edbapply/v2';
 
-export const searchApiUrl =   'https://iadev.cmfchina.com/IA/polymerize/search.html';
 
-// export const searchApiUrl =   'https://ia.cmfchina.com/IA/polymerize/search.html';
-
-export const dashCardUrl =  'http://192.168.126.158:8188/web-main/#/dataCardDetail';
-// ?token=6cfd77f6-de98-4f57-ace7-7b84a7ecf0371&type=get&id=2c17a80664e24cbdaa0f9f95515b17c5   数据来源:主题下的行业(多个，并且不同主题可同个行业) 
-
-
-export const getIndicatorUrl = (token: string, indicatorCode: string) => {
-  return `https://jstest.cmfchina.com/web-main/#/dataChartDetail?token=${token}&hideMenu=true&layout=false&type=getChart&codes=${indicatorCode}`;
-};
+// API路径前缀
+const DATA_PORTAL_PREFIX = '/cmfwxrobot';
+//  文件上传地址
+export const uploadActionUrl = `${DATA_PORTAL_PREFIX}/menuItem/uploadIcon`;
+ 
 
 // 分类相关API
 export const commonApi = {
@@ -46,8 +38,21 @@ export const commonApi = {
         }
       });
     },
-  
 
+
+    getAllDeepAnalysisList(query: DeepAnalysisQueryPayload, token: string) {
+      console.log('query',query)
+      const apiUrl = `${DATA_PORTAL_PREFIX}/deepAnalysis/list`;
+      return service.post<PaginatedDeepAnalysisResult>(apiUrl, query, {
+        headers: {
+          // 'Content-Type': 'application/json', // service.post 通常会自动设置
+          'Accept': 'application/json',
+          'user_token': token // 根据您现有的API调用，token键名可能是 'Authentication' 或 'user_token'
+        }
+      });
+    },
+  
+    
   /**
    * 获取指标数据顶部列表
    */
@@ -92,6 +97,18 @@ export const commonApi = {
      });
   },
 
+
+  getMetricsDataByMetricType(payload: any, token: string) {
+    // payload 应包含 indicatorCode, indicatorKeyName 等
+     return service.post(`${DATA_PORTAL_PREFIX}/metrics/getMetricsDataByMetricType`, payload, {
+       headers: {
+         'Content-Type': 'application/json',
+         'Accept': 'application/json, text/plain, */*',
+         'Authentication': token
+       }
+     });
+  },
+
   /**
    * 获取指标数据列表 
    */
@@ -125,5 +142,52 @@ export const commonApi = {
     });
   },
 
+    // --- 新增的友情链接相关 API 方法 ---
+  /**
+   * 获取顶级菜单项 (公司列表)
+   */
+  getTopMenuItems(token: string) {
+    const apiUrl = `${DATA_PORTAL_PREFIX}/menuItem/getTopMenuItem`;
+    return service.get<PlatformMenuItem[]>(apiUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'user_token': token // 根据您的认证方式调整 'user_token' 或 'Authentication'
+      }
+    });
+  },
 
+  /**
+   * 获取子菜单项 (链接列表)
+   * @param parentId 父级ID (公司ID)
+   * @param token 认证Token
+   */
+  getChildMenuItems(parentId: string | number, token: string) {
+      const apiUrl = `${DATA_PORTAL_PREFIX}/menuItem/getChildMenuItem`;
+      return service.post<PlatformMenuItem[]>(apiUrl, { parentId: String(parentId) }, { // 确保 parentId 是字符串
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'user_token': token // 根据您的认证方式调整
+        }
+      });
+    },
+    fetchMockPlatformMenu(token: string){
+      const apiUrl = `${DATA_PORTAL_PREFIX}/menuItem/getAllMenuItem`;
+      return service.get<PlatformMenuItem[]>(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'user_token': token  
+        }
+      });
+
+    },
+    addDeepAnalysisPv(analysisId: string, token: string){
+      const apiUrl = `${DATA_PORTAL_PREFIX}/deepAnalysis/addDeepAnalysisPv/${analysisId}`;
+      return service.get(apiUrl,   {
+        headers: { 'user_token': token }
+      });
+    }
 };
+
+ 
+           

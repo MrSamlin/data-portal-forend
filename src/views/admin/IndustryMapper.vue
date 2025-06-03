@@ -122,7 +122,7 @@ const fetchIndustries = async () => {
     // const apiCurrentPage = page.value - 1; // 0-based index
     const apiCurrentPage = (page.value - 1) * pageSize.value; // offset
 
-    const response = await service.post('/dataPortal/industryMapper/list', {
+    const response = await service.post('/cmfwxrobot/industryMapper/list', {
       page: page.value,
       size: pageSize.value,
       currentPage: apiCurrentPage, // 使用正确的 currentPage 计算方式
@@ -154,17 +154,17 @@ const fetchIndustries = async () => {
 
 const addIndustry = async (data: Omit<typeof industryForm, 'id'>) => {
   // 注意：接口路径根据您的描述调整
-  return service.post('/dataPortal/industryMapper', data)
+  return service.post('/cmfwxrobot/industryMapper', data)
 }
 
 const updateIndustry = async (id: number, data: Omit<typeof industryForm, 'id'>) => {
   // 注意：接口路径根据您的描述调整
-  return service.put(`/dataPortal/industryMapper/${id}`, data)
+  return service.put(`/cmfwxrobot/industryMapper/${id}`, data)
 }
 
 const deleteIndustry = async (id: number) => {
   // 注意：接口路径根据您的描述调整
-  return service.delete(`/dataPortal/industryMapper/${id}`)
+  return service.delete(`/cmfwxrobot/industryMapper/${id}`)
 }
 
 // --- 事件处理 ---

@@ -30,10 +30,10 @@
          <el-table-column prop="analysisName" label="分析维度" />
          <el-table-column prop="jumpUrl" label="跳转地址" show-overflow-tooltip />
          <el-table-column prop="viewCount" label="浏览次数" width="100" />
-         <el-table-column prop="status" label="状态" width="100">
+         <el-table-column prop="status" label="是否可见" width="100">
            <template #default="scope">
              <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'">
-               {{ Number(scope.row.status) === 1 ? '已发布' : '未发布' }}
+               {{ Number(scope.row.status) === 1 ? '可见' : '隐藏' }}
              </el-tag>
            </template>
          </el-table-column>
@@ -115,7 +115,7 @@ const fetchAnalysisList = async () => {
   loading.value = true;
   const apiCurrentPage = (page.value - 1) * pageSize.value; // Recalculate here or adjust state management
   try {
-    const response = await service.post('/dataPortal/deepAnalysis/list', {
+    const response = await service.post('/cmfwxrobot/deepAnalysis/list', {
       page: page.value,
       currentPage: apiCurrentPage, // Ensure correct parameter name
       size: pageSize.value,
@@ -159,7 +159,7 @@ const handleDeleteAnalysis = (row: any) => {
   ).then(async () => {
     loading.value = true;
     try {
-      await service.delete(`/dataPortal/deepAnalysis/${row.id}`, {
+      await service.delete(`/cmfwxrobot/deepAnalysis/${row.id}`, {
           headers: { 'Authentication': userToken.value }
       });
       ElMessage.success('删除成功');

@@ -2,20 +2,42 @@
 import axios, { InternalAxiosRequestConfig } from 'axios'
 
 // 获取环境变量
-const apiBaseUrl = process.env.NODE_ENV === 'production' ? 'https://iadev.cmfchina.com' : '/'
+let apiBaseUrl='';
+  let searchApiUrl: string;
+  let dashCardUrl: string;
+  let getIndicatorUrl: (token: string, indicatorCode: string) => string;
+if( process.env.NODE_ENV === 'production'){
+  apiBaseUrl =  'https://ia.cmfchina.com';
+    searchApiUrl =   'https://ia.cmfchina.com/IA/polymerize/search.html';
+    dashCardUrl =  'https://js.cmfchina.com/web-main/#/dataCardDetail';
+    getIndicatorUrl = (token: string, indicatorCode: string) => {
+  return `https://js.cmfchina.com/web-main/#/dataChartDetail?token=${token}&hideMenu=true&layout=false&type=getChart&codes=${indicatorCode}`;
+};
+}
+if( process.env.NODE_ENV === 'test'){
+  apiBaseUrl =  'https://iadev.cmfchina.com' ;
+  searchApiUrl =   'https://iadev.cmfchina.com/IA/polymerize/search.html';
+  dashCardUrl =  'https://jstest.cmfchina.com/web-main/#/dataCardDetail';
+  getIndicatorUrl = (token: string, indicatorCode: string) => {
+return `https://js.cmfchina.com/web-main/#/dataChartDetail?token=${token}&hideMenu=true&layout=false&type=getChart&codes=${indicatorCode}`;
+};
+  
+}
+if( process.env.NODE_ENV === 'development'){
+  apiBaseUrl =  '/' ;
+  searchApiUrl =   'https://iadev.cmfchina.com/IA/polymerize/search.html';
+  dashCardUrl =  'https://jstest.cmfchina.com/web-main/#/dataCardDetail';
+  getIndicatorUrl = (token: string, indicatorCode: string) => {
+  return `https://js.cmfchina.com/web-main/#/dataChartDetail?token=${token}&hideMenu=true&layout=false&type=getChart&codes=${indicatorCode}`;
+};
+}
 
-// const apiBaseUrl = process.env.NODE_ENV === 'production' ? 'https://ia.cmfchina.com' : '/'
 
 const service = axios.create({
   baseURL: apiBaseUrl,  // 使用相对路径，让代理处理
   timeout: 10000,
   withCredentials: true  // 允许跨域请求携带凭证
 })
-
-// 不需要设置 baseURL，让请求走代理
-// axios.defaults.baseURL = process.env.NODE_ENV === 'development' 
-//   ? 'http://localhost:3001'  // 删除这个
-//   : 'http://your-production-url';
 
 // 添加请求拦截器
 service.interceptors.request.use(
@@ -37,7 +59,7 @@ service.interceptors.request.use(
     
     // 如果不是开发环境，添加dataPortal前缀
     if (process.env.NODE_ENV !== 'development' && config.url) {
-      config.url = `/dataPortal${config.url}`
+      config.url = `/cmfwxrobot${config.url}`
     }
     
     return config
@@ -87,6 +109,12 @@ service.interceptors.response.use(
   }
 )
 
-export default service
+
+export {
+  service as default,
+  searchApiUrl,
+  dashCardUrl,
+  getIndicatorUrl
+};
 
  

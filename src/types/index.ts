@@ -28,6 +28,7 @@ export  interface CategoryResponse {
   categoryName: string;
   icon: string;
   themeCode: string;
+  bannerImage: string;
 }
 
 // 展示行业卡片类型
@@ -59,6 +60,20 @@ updateUser?: string;
 themeCode?: string;
 }
 
+export interface PaginatedDeepAnalysisResult {
+  data: DeepAnalysisItem[]; // 对应 result.setData(data)
+  total: number;           // 对应 result.setTotal(total)
+  currentPage: number;     // 对应 result.setCurrentPage(query.getPage())
+  pageSize: number;        // 对应 result.setPageSize(query.getSize())
+  totalPages: number;      // 对应 result.setTotalPages(totalPages)
+}
+
+export interface DeepAnalysisQueryPayload {
+  page: number; // 对应 query.getPage()
+  size: number; // 对应 query.getSize()
+  analysisName?: string;  
+}
+
 // 指标数据接口定义
 export interface MetricsItem {
 id: number;
@@ -70,6 +85,25 @@ updateUser?: string;
 createDate?: string | Date;
 updateDate?: string | Date;
 themeCode?: string;
+tag: string;
 }
 
 
+// 友情链接
+ 
+export interface PlatformMenuItem {
+  id: number | string;
+  parentId?: number | string | null;
+  parentName?: string | null;
+  title: string;
+  link?: string | null;
+  type?: string | null;
+  isGroup: boolean;
+  sortOrder?: number;
+  status?: number;
+  createTime?: string;
+  updateTime?: string;
+  children: PlatformMenuItem[]; // 用于存储获取到的子项
+  _childrenFetched?: boolean;   // 内部状态：标记子项是否已获取
+  _isLoadingChildren?: boolean; // 内部状态：标记是否正在加载子项
+}

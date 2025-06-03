@@ -25,13 +25,30 @@
 
       <!-- 数据表格 -->
       <el-table :data="indicatorList" style="width: 100%" v-loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="categoryName" label="所属主题" width="150" />
-        <el-table-column prop="metricsCode" label="指标代码" width="120" />
+        <el-table-column prop="id" label="ID"   />
+        <el-table-column prop="categoryName" label="所属主题" />
+        <el-table-column prop="metricsCode" label="指标代码"  />
         <el-table-column prop="metricName" label="指标名称" />
-        <el-table-column prop="createDate" label="创建时间" width="180" :formatter="formatDate" />
-        <el-table-column prop="updateDate" label="更新时间" width="180" :formatter="formatDate" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column prop="createDate" label="创建时间"  :formatter="formatDate" />
+        <el-table-column prop="updateDate" label="更新时间"  :formatter="formatDate" />
+
+         <el-table-column prop="isVisible" label="是否可见" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.isVisible === 1 ? 'success' : 'info'">
+              {{ scope.row.isVisible === 1 ? '可见' : '隐藏' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="tag" label="是否重要">
+           <template #default="scope">
+             <el-tag :type="Number(scope.row.tag) === 1 ? 'warning' : 'info'">
+               {{ Number(scope.row.tag) === 1 ? '重要' : '不重要' }}
+             </el-tag>
+           </template>
+        </el-table-column>
+
+        <el-table-column label="操作"   fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" @click="handleEditIndicator(scope.row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDeleteIndicator(scope.row)">删除</el-button>
@@ -100,7 +117,7 @@ const fetchIndicatorList = async () => {
   loading.value = true;
   const apiCurrentPage = (page.value - 1) * pageSize.value; // Calculate 0-based page for API if needed
   try {
-    const response = await service.post('/dataPortal/metrics/list', {
+    const response = await service.post('/cmfwxrobot/metrics/list', {
       page: page.value,
       currentPage: apiCurrentPage, // Adjust param name if needed
       size: pageSize.value,
@@ -156,7 +173,7 @@ const handleDeleteIndicator = (row: any) => {
   ).then(async () => {
     loading.value = true; // Consider a separate loading state for delete?
     try {
-      await service.delete(`/dataPortal/metrics/${row.id}`, {
+      await service.delete(`/cmfwxrobot/metrics/${row.id}`, {
         headers: { 'Authentication': userToken.value }
       });
       ElMessage.success('删除成功');
@@ -203,6 +220,9 @@ const formatDate = (row: any, column: any, cellValue: string, index: number) => 
     return cellValue;
   }
 };
+
+
+ 
 
 // 页面加载
 onMounted(() => {

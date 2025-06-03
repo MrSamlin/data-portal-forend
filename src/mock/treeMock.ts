@@ -2,7 +2,6 @@
 import type { TreeNode } from '@/types/treeSelect';
 
 export const mockTreeData: TreeNode[] = [
-  // --- 第一层 ---
   {
     indicatorName: "TMT",
     nodeId: "727167761082522280",
@@ -184,8 +183,6 @@ export const mockTreeData: TreeNode[] = [
     orderNum: 2,
     isEndCatalog: 1
   },
-
-  // --- 第二层 - 交通运输 的子节点 (模拟) ---
   {
     indicatorName: "公路运输",
     nodeId: "trans_child_1",
@@ -206,7 +203,7 @@ export const mockTreeData: TreeNode[] = [
     orderNum: 2,
     isEndCatalog: 1
   },
-   {
+  {
     indicatorName: "航空运输",
     nodeId: "trans_child_3",
     hasChildren: 0,
@@ -216,9 +213,6 @@ export const mockTreeData: TreeNode[] = [
     orderNum: 3,
     isEndCatalog: 1
   },
-
-
-  // --- 第二层 - 汽车 的子节点 (使用你提供的数据) ---
   {
     indicatorName: "产品产量和消费量",
     nodeId: "72716776262349839",
@@ -227,7 +221,13 @@ export const mockTreeData: TreeNode[] = [
     parentCode: "727167761438240777", // 汽车 的 code
     levelCode: "3", // Level 3
     orderNum: 579,
-    tinyInt: 0, unit: "", stamp: null, source: "", noteCategory: "72716776", indicatorId: "727167761438240777&72716776262349839", sourceId: "", dataSource: "", remark: "", sourceTable: "", parentCodeNew: "", isUpdate: null, isEndCatalog: 0, frequency: "", version: "", delFlag: null, id: null, sourceCode: "", hasPrivilege: ""
+    tinyInt: 0, unit: "", stamp: null, source: "",
+     noteCategory: "72716776", 
+     indicatorId: "727167761438240777&72716776262349839", 
+     sourceId: "", dataSource: "",
+      remark: "", sourceTable: "", parentCodeNew: "",
+       isUpdate: null, isEndCatalog: 0, frequency: "", 
+       version: "", delFlag: null, id: null, sourceCode: "", hasPrivilege: ""
   },
   {
     indicatorName: "产品产量和销售量",
@@ -259,9 +259,7 @@ export const mockTreeData: TreeNode[] = [
     orderNum: 586,
     tinyInt: 0, unit: "", stamp: null, source: "", noteCategory: "72716776", indicatorId: "727167761438240777&727167761125068575", sourceId: "", dataSource: "", remark: "", sourceTable: "", parentCodeNew: "", isUpdate: null, isEndCatalog: 1, frequency: "", version: "", delFlag: null, id: null, sourceCode: "", hasPrivilege: ""
   },
-
-  // --- 第三层 - 公路运输 的子节点 (模拟) ---
-   {
+  {
     indicatorName: "高速公路里程",
     nodeId: "trans_road_child_1",
     hasChildren: 0, // 叶子节点
@@ -281,8 +279,6 @@ export const mockTreeData: TreeNode[] = [
     orderNum: 2,
     isEndCatalog: 1
   },
-
-   // --- 第三层 - 产品产量和消费量 的子节点 (模拟) ---
    {
     indicatorName: "乘用车产量",
     nodeId: "auto_prod_cons_1",
@@ -302,14 +298,89 @@ export const mockTreeData: TreeNode[] = [
     levelCode: "4",
     orderNum: 2,
     isEndCatalog: 1
-   }
-
-  // ... 为其他第一层节点添加模拟的第二层子节点 ...
-  // 例如：化工、医药生物、有色金属等
-  // ... 确保 parentCode, levelCode, orderNum, hasChildren/isEndCatalog 正确设置 ...
-
+   },
+    {
+    indicatorName: "中国:新能源汽车渗透率",
+    nodeId: "mock_auto_child_1",
+    hasChildren: 0,
+    indicatorCode: "MOCK_AUTO_PENETRATION",
+    parentCode: "727167761438240777", // 汽车
+    levelCode: "3",
+    orderNum: 588,
+    isEndCatalog: 1,
+    tinyInt: 0,
+    unit: "%",
+    stamp: null,
+    source: "中汽协",
+    noteCategory: "72716776",
+    indicatorId: "727167761438240777&MOCK_AUTO_PENETRATION",
+    sourceId: "",
+    dataSource: "中汽协",
+    remark: "",
+    sourceTable: "",
+    parentCodeNew: "",
+    isUpdate: null,
+    frequency: "月",
+    version: "",
+    delFlag: null,
+    id: null,
+    sourceCode: "gfzq_中国:新能源汽车渗透率123",
+    hasPrivilege: ""
+  },
+  {
+    indicatorName: "中国:猪肉价格指数",
+    nodeId: "mock_agri_child_1",
+    hasChildren: 0,
+    indicatorCode: "MOCK_AGRI_PORK_PRICE",
+    parentCode: "727167761105689838", // 农林牧渔
+    levelCode: "3",
+    orderNum: 1,
+    isEndCatalog: 1,
+    tinyInt: 0,
+    unit: "元/公斤",
+    stamp: null,
+    source: "农业农村部",
+    noteCategory: "72716776",
+    indicatorId: "727167761105689838&MOCK_AGRI_PORK_PRICE",
+    sourceId: "",
+    dataSource: "农业农村部",
+    remark: "",
+    sourceTable: "",
+    parentCodeNew: "",
+    isUpdate: null,
+    frequency: "周",
+    version: "",
+    delFlag: null,
+    id: null,
+    sourceCode: "EXCEL_中国:猪肉价格指数456",
+    hasPrivilege: ""
+  },
+  {
+    indicatorName: "国际:原油价格(布伦特)",
+    nodeId: "mock_chem_child_1",
+    hasChildren: 0,
+    indicatorCode: "MOCK_CHEM_OIL_PRICE",
+    parentCode: "727167761237286591", // 化工
+    levelCode: "3",
+    orderNum: 1,
+    isEndCatalog: 1,
+    tinyInt: 0,
+    unit: "美元/桶",
+    stamp: null,
+    source: "ICE",
+    noteCategory: "72716776",
+    indicatorId: "727167761237286591&MOCK_CHEM_OIL_PRICE",
+    sourceId: "",
+    dataSource: "Wind",
+    remark: "",
+    sourceTable: "",
+    parentCodeNew: "",
+    isUpdate: null,
+    frequency: "日",
+    version: "",
+    delFlag: null,
+    id: null,
+    sourceCode: "CJZQ_国际:原油价格(布伦特)789",
+    hasPrivilege: ""
+  }
 ];
-
-// 你可以继续为其他第一层分类（如化工、医药等）添加第二层数据，
-// 并为一些第二层节点添加第三层数据，以模拟更深的树结构。
-// 注意保持 nodeId 和 indicatorCode 的唯一性。

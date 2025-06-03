@@ -29,12 +29,12 @@ const createProxy = (env: string): ProxyConfig => {
   const target = API_BASE_URL[env as keyof typeof API_BASE_URL];
   
   return {
-    '/dataPortal': {
+    '/cmfwxrobot': {
       target,
       changeOrigin: true,
       ws: true,
       pathRewrite: {
-        '^/dataPortal': '/dataPortal' // 保持API路径不变
+        '^/cmfwxrobot': '/cmfwxrobot' // 保持API路径不变
       }
     }
   };

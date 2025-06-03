@@ -1,13 +1,13 @@
 // src/mockData/treeMockApi.ts
 import type { TreeNode } from '@/types/treeSelect'; // 确认路径
-
+import { mockTreeData } from '@/mock/treeMock'; // 从同一目录下的 treeMock.ts 导入  
 
 // --- 模拟的顶层节点数据 ---
 const topLevelNodes: TreeNode[] = [
   { indicatorName: "汽车", nodeId: "727167761438240777", hasChildren: 1, indicatorCode: "AUTO", parentCode: "727167761399846748", levelCode: "1", orderNum: 1 },
   { indicatorName: "宏观经济", nodeId: "MACRO_ECONOMY", hasChildren: 1, indicatorCode: "MACRO", parentCode: "727167761399846748", levelCode: "1", orderNum: 2 },
   { indicatorName: "地产", nodeId: "REAL_ESTATE", hasChildren: 1, indicatorCode: "RE", parentCode: "727167761399846748", levelCode: "1", orderNum: 3 },
-  { indicatorName: "策略", nodeId: "STRATEGY", hasChildren: 0, indicatorCode: "STRAT", parentCode: "727167761399846748", levelCode: "1", orderNum: 4, isEndCatalog: 1 },
+  { indicatorName: "策略", nodeId: "STRATEGY", hasChildren: 0, indicatorCode: "STRAT", parentCode: "727167761399846748", levelCode: "1", orderNum: 4, isEndCatalog: 1, sourceCode:"M0000059" },
   // 可以添加更多顶层节点
 ];
 
@@ -15,38 +15,45 @@ const topLevelNodes: TreeNode[] = [
 const autoChildren: TreeNode[] = [
   { indicatorName: "产品产量和消费量", nodeId: "72716776262349839", hasChildren: 1, indicatorCode: "AUTO_PROD_CONS", parentCode: "AUTO", levelCode: "2", orderNum: 579 ,isEndCatalog:1},
   { indicatorName: "产品产量和销售量", nodeId: "72716776152048474", hasChildren: 1, indicatorCode: "AUTO_PROD_SALE", parentCode: "AUTO", levelCode: "2", orderNum: 581 ,isEndCatalog:1},
-  { indicatorName: "产品进出口", nodeId: "727167761143609270", hasChildren: 0, indicatorCode: "AUTO_IMPORT_EXPORT", parentCode: "AUTO", levelCode: "2", orderNum: 583, isEndCatalog: 1 },
-  { indicatorName: "产品销量和销售量", nodeId: "727167761125068575", hasChildren: 0, indicatorCode: "AUTO_SALE_VOL", parentCode: "AUTO", levelCode: "2", orderNum: 586, isEndCatalog: 1 },
+  { indicatorName: "产品进出口", nodeId: "727167761143609270", hasChildren: 0, indicatorCode: "AUTO_IMPORT_EXPORT", parentCode: "AUTO", levelCode: "2", orderNum: 583, isEndCatalog: 1 , sourceCode:"M0000059"},
+  { indicatorName: "产品销量和销售量", nodeId: "727167761125068575", hasChildren: 0, indicatorCode: "AUTO_SALE_VOL", parentCode: "AUTO", levelCode: "2", orderNum: 586, isEndCatalog: 1 , sourceCode:"M0000059"},
 ];
 
 // --- 模拟的“宏观经济”子节点数据 ---
 const macroChildren: TreeNode[] = [
     { indicatorName: "GDP", nodeId: "MACRO_GDP", hasChildren: 1, indicatorCode: "GDP", parentCode: "MACRO", levelCode: "2", orderNum: 1 ,isEndCatalog:1},
-    { indicatorName: "CPI", nodeId: "MACRO_CPI", hasChildren: 0, indicatorCode: "CPI", parentCode: "MACRO", levelCode: "2", orderNum: 2, isEndCatalog: 1 },
-    { indicatorName: "PMI", nodeId: "MACRO_PMI", hasChildren: 0, indicatorCode: "PMI", parentCode: "MACRO", levelCode: "2", orderNum: 3, isEndCatalog: 1 },
+    { indicatorName: "CPI", nodeId: "MACRO_CPI", hasChildren: 0, indicatorCode: "CPI", parentCode: "MACRO", levelCode: "2", orderNum: 2, isEndCatalog: 1 , sourceCode:"M0000059"},
+    { indicatorName: "PMI", nodeId: "MACRO_PMI", hasChildren: 0, indicatorCode: "PMI", parentCode: "MACRO", levelCode: "2", orderNum: 3, isEndCatalog: 1 , sourceCode:"M0000059"},
 ];
 
 // --- 模拟的“地产”子节点数据 ---
 const realEstateChildren: TreeNode[] = [
-    { indicatorName: "销售面积", nodeId: "RE_SALE_AREA", hasChildren: 0, indicatorCode: "RE_SALE_AREA", parentCode: "RE", levelCode: "2", orderNum: 1, isEndCatalog: 1 },
-    { indicatorName: "新开工面积", nodeId: "RE_NEW_START", hasChildren: 0, indicatorCode: "RE_NEW_START", parentCode: "RE", levelCode: "2", orderNum: 2, isEndCatalog: 1 },
+    { indicatorName: "销售面积", nodeId: "RE_SALE_AREA", hasChildren: 0, indicatorCode: "RE_SALE_AREA", parentCode: "RE", levelCode: "2", orderNum: 1, isEndCatalog: 1 , sourceCode:"M0000059"},
+    { indicatorName: "新开工面积", nodeId: "RE_NEW_START", hasChildren: 0, indicatorCode: "RE_NEW_START", parentCode: "RE", levelCode: "2", orderNum: 2, isEndCatalog: 1, sourceCode:"M0000059" },
 ];
 
 // --- 模拟的“GDP”子节点数据 ---
 const gdpChildren: TreeNode[] = [
-    { indicatorName: "第一产业GDP", nodeId: "GDP_PRIMARY", hasChildren: 0, indicatorCode: "GDP_P", parentCode: "GDP", levelCode: "3", orderNum: 1, isEndCatalog: 1 },
-    { indicatorName: "第二产业GDP", nodeId: "GDP_SECONDARY", hasChildren: 0, indicatorCode: "GDP_S", parentCode: "GDP", levelCode: "3", orderNum: 2, isEndCatalog: 1 },
-    { indicatorName: "第三产业GDP", nodeId: "GDP_TERTIARY", hasChildren: 0, indicatorCode: "GDP_T", parentCode: "GDP", levelCode: "3", orderNum: 3, isEndCatalog: 1 },
+    { indicatorName: "第一产业GDP", nodeId: "GDP_PRIMARY", hasChildren: 0, indicatorCode: "GDP_P", parentCode: "GDP", levelCode: "3", orderNum: 1, isEndCatalog: 1, sourceCode:"M0000059" },
+    { indicatorName: "第二产业GDP", nodeId: "GDP_SECONDARY", hasChildren: 0, indicatorCode: "GDP_S", parentCode: "GDP", levelCode: "3", orderNum: 2, isEndCatalog: 1 , sourceCode:"M0000059"},
+    { indicatorName: "第三产业GDP", nodeId: "GDP_TERTIARY", hasChildren: 0, indicatorCode: "GDP_T", parentCode: "GDP", levelCode: "3", orderNum: 3, isEndCatalog: 1, sourceCode:"M0000059"   },
 ];
 // --- 模拟的“产品产量和消费量”子节点数据 ---
 const autoProdConsChildren: TreeNode[] = [
-     { indicatorName: "乘用车产量", nodeId: "AUTO_PASSENGER_PROD", hasChildren: 0, indicatorCode: "AUTO_P_PROD", parentCode: "AUTO_PROD_CONS", levelCode: "3", orderNum: 1, isEndCatalog: 1 },
-     { indicatorName: "商用车产量", nodeId: "AUTO_COMMERCIAL_PROD", hasChildren: 0, indicatorCode: "AUTO_C_PROD", parentCode: "AUTO_PROD_CONS", levelCode: "3", orderNum: 2, isEndCatalog: 1 },
+     { indicatorName: "乘用车产量", nodeId: "AUTO_PASSENGER_PROD", hasChildren: 0, indicatorCode: "AUTO_P_PROD", parentCode: "AUTO_PROD_CONS", levelCode: "3", orderNum: 1, isEndCatalog: 1,
+      sourceCode:"M0000059"  
+      },
+     { indicatorName: "商用车产量", nodeId: "AUTO_COMMERCIAL_PROD", hasChildren: 0, indicatorCode: "AUTO_C_PROD", parentCode: "AUTO_PROD_CONS", levelCode: "3", orderNum: 2, isEndCatalog: 1 ,
+      sourceCode:"M0000059"  
+     },
 ];
 // --- 模拟的“产品产量和销售量”子节点数据 ---
 const autoProdSaleChildren: TreeNode[] = [
-    { indicatorName: "新能源汽车销量", nodeId: "AUTO_NEV_SALE", hasChildren: 0, indicatorCode: "AUTO_NEV_S", parentCode: "AUTO_PROD_SALE", levelCode: "3", orderNum: 1, isEndCatalog: 1 },
-    { indicatorName: "燃油车销量", nodeId: "AUTO_FUEL_SALE", hasChildren: 0, indicatorCode: "AUTO_FUEL_S", parentCode: "AUTO_PROD_SALE", levelCode: "3", orderNum: 2, isEndCatalog: 1 },
+    { indicatorName: "新能源汽车销量", nodeId: "AUTO_NEV_SALE", hasChildren: 0, indicatorCode: "AUTO_NEV_S", parentCode: "AUTO_PROD_SALE", levelCode: "3", orderNum: 1, isEndCatalog: 1, 
+      sourceCode:"M0000059"    },
+    { indicatorName: "燃油车销量", nodeId: "AUTO_FUEL_SALE", hasChildren: 0, indicatorCode: "AUTO_FUEL_S", parentCode: "AUTO_PROD_SALE", levelCode: "3", orderNum: 2, isEndCatalog: 1,
+      sourceCode:"M0000059"
+     },
 ];
 
 
@@ -87,7 +94,9 @@ export const fetchMockNodes = (parentCode: string | null): Promise<TreeNode[]> =
           source: node.source ?? "MockSource",
           // ... 补充其他你需要的默认值 ...
       }));
+      const targetParentCode = parentCode === null ? "727167761214922697" : parentCode;
 
+      children = mockTreeData.filter(node => node.parentCode === targetParentCode);
       resolve(processedChildren);
     }, 500); // 模拟 500ms 延迟
   });

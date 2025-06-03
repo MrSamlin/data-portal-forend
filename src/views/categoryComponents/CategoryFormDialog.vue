@@ -39,9 +39,69 @@
       <el-form-item label="排序" prop="displayOrder">
         <el-input-number v-model="categoryForm.displayOrder" :min="1" :max="999" />
       </el-form-item>
-      <el-form-item label="颜色" prop="icon">
-        <el-color-picker v-model="categoryForm.icon" />
+        <el-form-item label="底图" prop="icon">
+        <div class="icon-selector-container">
+          <el-select
+            v-model="categoryForm.icon"
+            placeholder="请选择底图"
+            clearable
+            filterable
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="item in iconList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+              <div style="display: flex; align-items: center; height: 34px;">
+                <img 
+                  :src="`/icon/${item.value}`" 
+                  :alt="item.label" 
+                  style="width: 24px; height: 24px; margin-right: 8px; object-fit: contain; border: 1px solid #eee;" 
+                />
+                <span>{{ item.label }}</span>
+              </div>
+            </el-option>
+          </el-select>
+          <div v-if="categoryForm.icon" class="selected-icon-preview">
+            <img :src="`/icon/${categoryForm.icon}`" alt="底图预览" />
+          </div>
+        </div>
       </el-form-item>
+
+
+       <el-form-item label="图标" prop="bannerImage">
+        <div class="icon-selector-container">
+          <el-select
+            v-model="categoryForm.bannerImage"
+            placeholder="请选择图标"
+            clearable
+            filterable
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="item in imgList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+              <div style="display: flex; align-items: center; height: 34px;">
+                <img 
+                  :src="`/img/${item.value}`" 
+                  :alt="item.label" 
+                  style="width: 24px; height: 24px; margin-right: 8px; object-fit: contain; border: 1px solid #eee;" 
+                />
+                <span>{{ item.label }}</span>
+              </div>
+            </el-option>
+          </el-select>
+          <div v-if="categoryForm.bannerImage" class="selected-icon-preview">
+            <img :src="`/img/${categoryForm.bannerImage}`" alt="图标预览" />
+          </div>
+        </div>
+      </el-form-item>
+
       <el-form-item label="是否可见" prop="isVisible">
         <el-switch v-model="categoryForm.isVisible" :active-value="1" :inactive-value="0" />
       </el-form-item>
@@ -71,6 +131,8 @@ import service from '@/utils/axios';
 import { isAxiosError } from 'axios';
 import { userToken, getToken } from '@/composables/useAuth';
 import IndustrySelectDialog from './IndustrySelectDialog.vue'; // 导入行业选择组件
+import { uploadActionUrl } from '@/api/commonApi';
+import { imgList,iconList } from '@/types/imgUrl';
 
 // --- Props --- (接收可见性、编辑数据、模式)
 const props = defineProps({
@@ -97,18 +159,21 @@ const categoryFormRef = ref<FormInstance>();
 const industrySelectVisible = ref(false);
 const initialIndustryCodes = ref(''); // 用于传递给行业选择对话框的初始值
 
+ 
+
+
 // 内部表单数据
 const categoryForm = reactive({
   categoryId: '',
-  themeCode: '', // 存储选中的行业代码
+  themeCode: '',  
   categoryName: '',
   description: '',
   detailedDescription: '',
   displayOrder: 1,
-  icon: '', // 存储颜色
-  bannerImage: '', // 这个字段好像没在表单里?
+  icon: '',  
+  bannerImage: '', 
   isVisible: 1,
-  createdBy: 'admin', // 或者从用户信息获取
+  createdBy: 'admin',  
   updatedBy: 'admin',
 });
 
@@ -161,7 +226,6 @@ const fullResetForm = () => {
 // --- Watcher --- (监听外部传入的数据变化，填充表单)
 watch(() => props.categoryData, (newData) => {
   if (newData && props.mode === 'edit') {
-    // 深拷贝或浅拷贝数据到表单
     Object.keys(categoryForm).forEach(key => {
       if (key in newData) {
         categoryForm[key] = newData[key];
@@ -186,19 +250,19 @@ const handleIndustryConfirm = (selectedCodes: string) => {
 // 提交表单
 const submitCategoryForm = async () => {
   if (!categoryFormRef.value) return;
+  console.log('categoryForm: ',categoryForm)
   await categoryFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true;
       try {
         const dataToSubmit = { ...categoryForm };
-        // 可以在这里移除不需要提交的字段，例如 createdBy, updatedBy （如果后端处理）
         if (props.mode === 'add') {
-          await service.post('/dataPortal/categories', dataToSubmit, {
+          await service.post('/cmfwxrobot/categories', dataToSubmit, {
             headers: { 'Authentication': userToken.value }
           });
           ElMessage.success('新增成功');
         } else {
-          await service.put(`/dataPortal/categories/${categoryForm.categoryId}`, dataToSubmit, {
+          await service.put(`/cmfwxrobot/categories/${categoryForm.categoryId}`, dataToSubmit, {
             headers: { 'Authentication': userToken.value }
           });
           ElMessage.success('更新成功');
@@ -222,6 +286,8 @@ const closeDialog = () => {
   emit('update:visible', false);
 };
 
+
+ 
 </script>
 
 <style lang="scss" scoped>
@@ -233,5 +299,28 @@ const closeDialog = () => {
       flex-grow: 1;
   }
 }
-/* 如果需要，可以添加其他特定样式 */
+ 
+
+ 
+.icon-selector-container {
+  width: 100%;
+}
+
+.selected-icon-preview {
+  margin-top: 10px;
+  width: 100px; /* Or desired preview width */
+  height: 100px; /* Or desired preview height */
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* To respect border-radius with img */
+  
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
 </style> 

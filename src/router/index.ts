@@ -1,3 +1,4 @@
+
 import { createRouter, createWebHashHistory, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 
@@ -59,7 +60,13 @@ const routes: Array<RouteRecordRaw> = [
         name: 'industryMapperConfig',
         component:  () => import('@/views/admin/IndustryMapper.vue'),  
         meta: { title: '行业字典维护', requiresAuth: false }
-      }
+      } ,
+      { 
+        path: 'menuitemconfig',
+         name: 'AdminMenuItemConfig',
+        component:  () => import('@/views/admin/MenuItemConfig.vue'),  
+        meta: { title: '友情链接维护', requiresAuth: false }
+      }, 
     ]
   }
 ]
@@ -90,4 +97,111 @@ router.beforeEach((to, from, next) => {
   }
 })
 
-export default router    
+export default router
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

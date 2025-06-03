@@ -2,8 +2,11 @@ const { defineConfig } = require('@vue/cli-service');
 const path = require('path');
 const axios = require('axios');
 const { isDevelopment,isProduction } = require('./src/utils/env.js');
+const e = require('express');
 // 获取当前环境
-const env = isDevelopment ? 'development' : 'production';
+isDevelopment ? 'development' : 'production';
+ 
+let env =  process.env.NODE_ENV;
 
 // 不同环境的API基础URL
 const API_BASE_URL = {
@@ -25,13 +28,13 @@ const createProxy = () => {
   const dashboardTarget = DASHBOARD_API_URL[env];
   
   return {
-    '/dataPortal': {
+    '/cmfwxrobot': {
       target,
       changeOrigin: true,
       ws: true,
       secure: false,
       pathRewrite: {
-        '^/dataPortal': '/dataPortal' // 保持API路径不变，与proxy.ts保持一致
+        '^/cmfwxrobot': '/cmfwxrobot' // 保持API路径不变，与proxy.ts保持一致
       },
       // 添加CORS头
       onProxyRes: function(proxyRes, req, res) {
@@ -42,12 +45,12 @@ const createProxy = () => {
       }
     },
     // 添加指标看板API代理
-    '/dataPortal/edbapply': {
+    '/cmfwxrobot/edbapply': {
       target: dashboardTarget,
       changeOrigin: true,
       secure: false,
       pathRewrite: {
-        '^/dataPortal/edbapply': '/dw/edbapply' // 将/dataportdataPortalal/edbapply路径重写为/dw/edbapply
+        '^/cmfwxrobot/edbapply': '/dw/edbapply' // 将/dataportdataPortalal/edbapply路径重写为/dw/edbapply
       },
       // 添加CORS头
       onProxyRes: function(proxyRes, req, res) {
@@ -56,12 +59,18 @@ const createProxy = () => {
         proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Authentication';
         proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
       }
+    },
+    // 添加图片查看地址
+    '/img': {
+      target: target, 
+      changeOrigin: true,
+      secure: false 
     }
   };
 };
 
 module.exports = defineConfig({
-  publicPath: isProduction?'./':'/',
+  publicPath: isProduction?'./':'./',
   outputDir: 'dist',
   indexPath: 'index.html',
   assetsDir: 'static',
@@ -82,12 +91,12 @@ module.exports = defineConfig({
     // 添加一个中间件，用于处理直接访问的API请求
     onBeforeSetupMiddleware: function(devServer) {
       // 处理GET请求
-      devServer.app.get('/dataPortal/*', function(req, res) {
+      devServer.app.get('/cmfwxrobot/*', function(req, res) {
         // 检查当前环境是否为开发环境
         const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
         let targetUrl = targetUrlObj; // 初始化 targetUrl
         if (isDevelopment) {
-            targetUrl = targetUrlObj.replace('/dataPortal', '');
+            targetUrl = targetUrlObj.replace('/cmfwxrobot', '');
         } 
           // 转发请求到目标服务器
           axios.get(targetUrl)
@@ -107,13 +116,10 @@ module.exports = defineConfig({
             });
       });
 
-
-        // 处理POST请求
-        devServer.app.put('/dataPortal/*', function(req, res) {
-        
+        devServer.app.put('/cmfwxrobot/*', function(req, res) {
           const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
           if (isDevelopment) {
-              targetUrl = targetUrlObj.replace('/dataPortal', '');
+              targetUrl = targetUrlObj.replace('/cmfwxrobot', '');
           } 
         // 将请求体作为数据传递
         let data = '';
@@ -122,7 +128,6 @@ module.exports = defineConfig({
         });
         
         req.on('end', () => {
-          // 转发POST请求
           axios.put(targetUrl, data ? JSON.parse(data) : {}, {
             headers: {
               'Content-Type': 'application/json',
@@ -149,13 +154,13 @@ module.exports = defineConfig({
 
 
 
-      devServer.app.delete('/dataPortal/*', function(req, res) {
+      devServer.app.delete('/cmfwxrobot/*', function(req, res) {
         // 检查当前环境是否为开发环境
         console.log('delete请求:',req.url);
         const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
         let targetUrl = targetUrlObj; // 初始化 targetUrl
         if (isDevelopment) {
-            targetUrl = targetUrlObj.replace('/dataPortal', '');
+            targetUrl = targetUrlObj.replace('/cmfwxrobot', '');
         } 
           // 转发请求到目标服务器
           axios.delete(targetUrl)
@@ -177,45 +182,95 @@ module.exports = defineConfig({
 
       
       // 处理POST请求
-      devServer.app.post('/dataPortal/*', function(req, res) {
+      devServer.app.post('/cmfwxrobot/*', function(req, res) {
           const targetUrlObj = `${API_BASE_URL[env]}${req.url}`;
+          let targetUrl = targetUrlObj
           if (isDevelopment) {
-              targetUrl = targetUrlObj.replace('/dataPortal', '');
+              targetUrl = targetUrlObj.replace('/cmfwxrobot', '');
           } 
+          const incomingContentType = req.headers['content-type'] || '';
         // 将请求体作为数据传递
         let data = '';
         req.on('data', chunk => {
           data += chunk;
         });
-        
-        req.on('end', () => {
-          // 转发POST请求
-          axios.post(targetUrl, data ? JSON.parse(data) : {}, {
+        if (incomingContentType.includes('multipart/form-data')) {
+          // 对于 multipart/form-data，我们尝试将原始请求流直接传递给 axios
+          // 这依赖于 axios 在 Node.js 环境中对可读流 (ReadableStream) 的良好支持
+          // 并且后端能够正确处理流式传输的 multipart 数据。
+          // 关键是必须传递原始的 Content-Type 头部，因为它包含了 boundary 定义。
+
+          console.log(`[Multipart Forward] Attempting to stream POST to ${targetUrl} with Content-Type: ${incomingContentType}`);
+
+          // 直接将客户端的请求对象 (req，它是一个可读流) 作为 axios 的请求体
+          axios.post(targetUrl, req, {
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': req.headers['authorization'] || '',
-              'Authentication': req.headers['authentication'] || ''
-            }
+              // 至关重要：传递从客户端请求中获取的原始 Content-Type 头部
+              'Content-Type': incomingContentType,
+              // 传递其他可能相关的原始头部信息
+              // 你可以有选择地传递，或者传递全部 (...req.headers)，但要注意可能引入的问题
+              'Authorization': req.headers['authorization'] || undefined, // 如果不存在则不传
+              'Authentication': req.headers['authentication'] || undefined,
+              // 对于流式传输，Transfer-Encoding 通常是 chunked
+              'Transfer-Encoding': 'chunked',
+              // 确保 host 头部与目标服务器匹配
+              'host': new URL(targetUrl).host
+              // 注意: axios 可能会覆盖或添加某些头部。
+              // Content-Length 通常由流式传输自动处理或不应手动设置（除非你知道流的总大小）。
+            },
+            // 允许上传大文件，避免 axios 因默认大小限制而报错
+            maxBodyLength: Infinity, 
+            maxContentLength: Infinity 
           })
-            .then(response => {
-              // 设置CORS头
-              res.set('Access-Control-Allow-Origin', '*');
-              res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-              res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Authentication');
-              res.set('Access-Control-Allow-Credentials', 'true');
-              
-              // 返回数据
-              res.json(response.data);
+          .then(response => {
+            res.set('Access-Control-Allow-Origin', '*');
+            // ... 其他CORS头 ...
+            res.json(response.data);
+          })
+          .catch(error => {
+            console.error(`[Multipart Forward] POST ${targetUrl} failed:`, 
+                          error.message, 
+                          error.response ? `Status: ${error.response.status}` : '',
+                          error.response ? `Data: ${JSON.stringify(error.response.data)}` : 'No response data');
+            res.status(error.response?.status || 500)
+               .json(error.response?.data || { error: 'Multipart API request forwarding failed' });
+          });
+
+        } else {
+          req.on('end', () => {
+            const contentType = req.headers['content-type'] || '';
+            const isJson = contentType.includes('application/json');
+            const postData = isJson ? (data ? JSON.parse(data) : {}) : data;
+            // 转发POST请求
+            axios.post(targetUrl, postData, {
+              headers: {
+                'Content-Type': contentType, // 保持前端原始 content-type
+                'Authorization': req.headers['authorization'] || '',
+                'Authentication': req.headers['authentication'] || ''
+              }
             })
-            .catch(error => {
-              console.error('转发API POST请求失败:', error.message);
-              res.status(error.response?.status || 500).json(error.response?.data || { error: 'API请求失败' });
-            });
-        });
+              .then(response => {
+                // 设置CORS头
+                res.set('Access-Control-Allow-Origin', '*');
+                res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+                res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Authentication');
+                res.set('Access-Control-Allow-Credentials', 'true');
+                
+                // 返回数据
+                res.json(response.data);
+              })
+              .catch(error => {
+                console.error('转发API POST请求失败:', error.message);
+                res.status(error.response?.status || 500).json(error.response?.data || { error: 'API请求失败' });
+              });
+          });
+
+        }
+     
       });
       
       // 处理OPTIONS请求（预检请求）
-      devServer.app.options('/dataPortal/*', function(req, res) {
+      devServer.app.options('/cmfwxrobot/*', function(req, res) {
         res.set('Access-Control-Allow-Origin', '*');
         res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Authentication');

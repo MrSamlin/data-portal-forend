@@ -42,10 +42,10 @@
       @row-dblclick="handleMetricRowDoubleClick"
       ref="metricTableRef"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="metricsCode" label="指标代码" width="150" />
+      <el-table-column prop="id" label="ID"   />
+      <el-table-column prop="metricsCode" label="指标代码"   />
       <el-table-column prop="metricName" label="指标名称" />
-      <el-table-column prop="categoryName" label="所属主题" width="150" />
+      <el-table-column prop="categoryName" label="所属主题"  />
       <!-- Add other relevant columns if needed -->
     </el-table>
 
@@ -147,7 +147,7 @@ const fetchMetricsForSelect = async () => {
   const apiCurrentPage = (metricPage.value - 1) * metricPageSize.value;
   try {
     // Use the API endpoint for listing metrics
-    const response = await service.post('/dataPortal/metrics/list', {
+    const response = await service.post('/cmfwxrobot/metrics/list', {
       page: metricPage.value,
       currentPage: apiCurrentPage, // Adjust param name if API needs it
       size: metricPageSize.value,

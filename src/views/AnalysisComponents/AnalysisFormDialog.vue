@@ -26,7 +26,7 @@
       <el-form-item label="跳转地址" prop="jumpUrl">
         <el-input v-model="analysisForm.jumpUrl" placeholder="请输入跳转地址" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="是否可见" prop="status">
         <!-- 确保 active-value 和 inactive-value 是 number 类型 -->
         <el-switch v-model="analysisForm.status" :active-value="1" :inactive-value="0" />
       </el-form-item>
@@ -88,6 +88,12 @@ const analysisForm = reactive<AnalysisFormItem>({
   jumpUrl: '',
   status: 0, // Default to 0 (未发布)
   categoryName: '',
+  viewCount: 0,
+publishDate: null,
+createDate:null,
+updateDate:null,
+createUser:'',
+updateUser:'',
 });
 
 // Computed for display
@@ -132,6 +138,7 @@ const handleThemeSelected = (theme: any) => {
 };
 
 const submitAnalysisForm = async () => {
+  console.log('analysisForm',analysisForm);
   if (!analysisFormRef.value) return;
   await analysisFormRef.value.validate(async (valid) => {
     if (valid) {
@@ -143,13 +150,13 @@ const submitAnalysisForm = async () => {
 
         if (props.mode === 'add') {
           const { id, ...addData } = dataToSubmit;
-          await service.post('/dataPortal/deepAnalysis', addData, {
+          await service.post('/cmfwxrobot/deepAnalysis', addData, {
             headers: { 'Authentication': userToken.value }
           });
           ElMessage.success('新增成功');
         } else {
           if (dataToSubmit.id === null) throw new Error("ID missing for update");
-          await service.put('/dataPortal/deepAnalysis', dataToSubmit, {
+          await service.put('/cmfwxrobot/deepAnalysis', dataToSubmit, {
             headers: { 'Authentication': userToken.value }
           });
           ElMessage.success('更新成功');
@@ -178,6 +185,7 @@ const closeDialog = () => {
 // --- Watcher ---
 watch(() => props.analysisData, (newData) => {
   resetForm(); // Reset first
+  console.log('newData',newData);
   if (newData && props.mode === 'edit') {
     Object.keys(analysisForm).forEach(key => {
       if (key in newData && newData[key] !== undefined && newData[key] !== null) {
